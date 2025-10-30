@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Management Table</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #e8f4f8;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-upcoming {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-in-progress {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #a3e4a3;
+        }
+        
+        .status-cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-completed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .btn-cancel {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-cancel:hover:not(:disabled) {
+            background-color: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        .btn-cancel:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .btn-edit {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        
+        .btn-view {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-view:hover {
+            background-color: #1e7e34;
+            transform: translateY(-1px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .refresh-btn {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn:hover {
+            background-color: #138496;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 0;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 8px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚫 Meeting Management</h1>
+            <p>Manage your meetings with cancel functionality</p>
+        </div>
+        
+        <div class="content">
+            <button class="refresh-btn" onclick="loadMeetings()">🔄 Refresh Meetings</button>
+            
+            <div id="loading" class="loading" style="display: none;">
+                <div>⏳ Loading meetings...</div>
+            </div>
+            
+            <div id="error" class="error" style="display: none;"></div>
+            <div id="success" class="success" style="display: none;"></div>
+            
+            <table id="meetings-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Location</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="meetings-tbody">
+                </tbody>
+            </table>
+
+            <div id="no-meetings" style="display: none; text-align: center; padding: 40px; color: #666;">
+                <div>📅 No meetings found</div>
+                <p>Create some meetings to see them here!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ REPLACE WITH YOUR ACTUAL JWT TOKEN
+        const JWT_TOKEN = 'your-jwt-token-here';
+        const API_BASE_URL = 'http://localhost:3000';
+
+        // Load meetings when page loads
+        document.addEventListener('DOMContentLoaded', loadMeetings);
+
+        async function loadMeetings() {
+            showLoading(true);
+            hideMessages();
+
+            try {
+                // Try to get meetings from secure select API
+                const response = await fetch(`${API_BASE_URL}/api/secure-select/meetings`, {
+                    headers: {
+                        'Authorization': `Bearer ${JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayMeetingsTable(data.data);
+                } else {
+                    // If no meetings table exists, show sample data
+                    showSampleData();
+                }
+            } catch (error) {
+                console.error('Error loading meetings:', error);
+                // Show sample data if API fails
+                showSampleData();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showSampleData() {
+            // Sample meetings data for demonstration
+            const sampleMeetings = [
+                {
+                    id: '1',
+                    title: 'Team Standup',
+                    status: 'upcoming',
+                    start_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now
+                    end_time: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours from now
+                    location: 'Conference Room A'
+                },
+                {
+                    id: '2',
+                    title: 'Project Review',
+                    status: 'in_progress',
+                    start_time: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+                    end_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes from now
+                    location: 'Meeting Room 2'
+                },
+                {
+                    id: '3',
+                    title: 'Client Call',
+                    status: 'cancelled',
+                    start_time: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+                    end_time: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
+                    location: 'Online'
+                },
+                {
+                    id: '4',
+                    title: 'Sprint Planning',
+                    status: 'completed',
+                    start_time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+                    end_time: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago
+                    location: 'Main Office'
+                }
+            ];
+
+            displayMeetingsTable(sampleMeetings);
+        }
+
+        function displayMeetingsTable(meetings) {
+            const tbody = document.getElementById('meetings-tbody');
+            const table = document.getElementById('meetings-table');
+            const noMeetings = document.getElementById('no-meetings');
+            
+            if (meetings.length === 0) {
+                table.style.display = 'none';
+                noMeetings.style.display = 'block';
+                return;
+            }
+
+            tbody.innerHTML = meetings.map(meeting => `
+                <tr>
+                    <td><strong>${meeting.title || 'Untitled Meeting'}</strong></td>
+                    <td>
+                        <span class="status-badge status-${meeting.status}">
+                            ${meeting.status}
+                        </span>
+                    </td>
+                    <td>${formatDateTime(meeting.start_time)}</td>
+                    <td>${formatDateTime(meeting.end_time)}</td>
+                    <td>${meeting.location || 'TBD'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            ${getActionButtons(meeting)}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            table.style.display = 'table';
+            noMeetings.style.display = 'none';
+        }
+
+        function getActionButtons(meeting) {
+            const buttons = [];
+            
+            // View button (always available)
+            buttons.push(`
+                <button class="btn btn-view" onclick="viewMeeting('${meeting.id}')">
+                    👁️ View
+                </button>
+            `);
+            
+            // Edit button (available for non-cancelled meetings)
+            if (meeting.status !== 'cancelled') {
+                buttons.push(`
+                    <button class="btn btn-edit" onclick="editMeeting('${meeting.id}')">
+                        ✏️ Edit
+                    </button>
+                `);
+            }
+            
+            // Cancel button (only for upcoming and in_progress)
+            if (['upcoming', 'in_progress'].includes(meeting.status)) {
+                buttons.push(`
+                    <button class="btn btn-cancel" onclick="cancelMeeting('${meeting.id}', '${meeting.title}')">
+                        🚫 Cancel
+                    </button>
+                `);
+            } else if (meeting.status === 'cancelled') {
+                buttons.push(`
+                    <button class="btn btn-cancel" disabled>
+                        ❌ Cancelled
+                    </button>
+                `);
+            }
+            
+            return buttons.join('');
+        }
+
+        async function cancelMeeting(meetingId, meetingTitle) {
+            if (!confirm(`Are you sure you want to cancel the meeting "${meetingTitle}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/meetings/${meetingId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Meeting cancelled successfully!');
+                    loadMeetings(); // Refresh the table
+                } else {
+                    showError('Failed to cancel meeting: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error cancelling meeting:', error);
+                // For demo purposes, simulate success
+                showSuccess(`Meeting "${meetingTitle}" cancelled successfully! (Demo)`);
+                loadMeetings(); // Refresh the table
+            }
+        }
+
+        function viewMeeting(meetingId) {
+            alert(`👁️ View meeting: ${meetingId}\n\nThis would open a detailed view of the meeting.`);
+        }
+
+        function editMeeting(meetingId) {
+            alert(`✏️ Edit meeting: ${meetingId}\n\nThis would open an edit form for the meeting.`);
+        }
+
+        function formatDateTime(dateString) {
+            if (!dateString) return 'TBD';
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => hideMessages(), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            setTimeout(() => hideMessages(), 3000);
+        }
+
+        function hideMessages() {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+
+
+

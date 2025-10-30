@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place Management System - Frontend Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .login-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .login-form input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .login-form button {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .login-form button:hover {
+            background: #0056b3;
+        }
+        .user-info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h3 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .controls button {
+            padding: 6px 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .controls button:hover {
+            background: #218838;
+        }
+        .controls button.danger {
+            background: #dc3545;
+        }
+        .controls button.danger:hover {
+            background: #c82333;
+        }
+        .data-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .data-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .data-item h4 {
+            margin: 0 0 5px 0;
+            color: #007bff;
+        }
+        .data-item p {
+            margin: 2px 0;
+            font-size: 14px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .hidden {
+            display: none;
+        }
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 Place Management System - Frontend Demo</h1>
+        
+        <!-- Login Section -->
+        <div id="loginSection" class="section">
+            <h3>Authentication</h3>
+            <div class="login-form">
+                <input type="email" id="emailInput" placeholder="Email" value="niroshmax01@gmail.com">
+                <input type="password" id="passwordInput" placeholder="Password" value="12345pass">
+                <button onclick="login()">Login</button>
+            </div>
+            <div id="loginMessage"></div>
+        </div>
+
+        <!-- User Info Section -->
+        <div id="userInfoSection" class="section hidden">
+            <h3>User Information</h3>
+            <div class="user-info">
+                <p><strong>User ID:</strong> <span id="userId"></span></p>
+                <p><strong>Role:</strong> <span id="userRole"></span></p>
+                <p><strong>Status:</strong> <span id="authStatus"></span></p>
+                <button onclick="logout()" class="danger">Logout</button>
+            </div>
+        </div>
+
+        <!-- Allowed Tables Section -->
+        <div id="tablesSection" class="section hidden">
+            <h3>Available Tables</h3>
+            <div class="controls">
+                <button onclick="loadAllowedTables()">Load Tables</button>
+                <button onclick="loadTableCapabilities()">Load Capabilities</button>
+            </div>
+            <div id="tablesDisplay" class="data-display"></div>
+        </div>
+
+        <!-- Places Section -->
+        <div id="placesSection" class="section hidden">
+            <h3>Places Management</h3>
+            <div class="controls">
+                <button onclick="loadPlaces()">Load All Places</button>
+                <button onclick="loadActivePlaces()">Load Active Places</button>
+                <button onclick="loadPlacesByCity()">Load Places by City</button>
+                <select id="cityFilter" class="filter-select">
+                    <option value="">Select City</option>
+                    <option value="New York">New York</option>
+                    <option value="Los Angeles">Los Angeles</option>
+                    <option value="Chicago">Chicago</option>
+                </select>
+            </div>
+            <div id="placesDisplay" class="data-display"></div>
+        </div>
+
+        <!-- Visitors Section -->
+        <div id="visitorsSection" class="section hidden">
+            <h3>Visitors Management</h3>
+            <div class="controls">
+                <button onclick="loadVisitors()">Load All Visitors</button>
+                <button onclick="loadBlacklistedVisitors()">Load Blacklisted</button>
+                <input type="text" id="visitorSearch" class="search-input" placeholder="Search by name...">
+                <button onclick="searchVisitors()">Search</button>
+            </div>
+            <div id="visitorsDisplay" class="data-display"></div>
+        </div>
+
+        <!-- Visits Section -->
+        <div id="visitsSection" class="section hidden">
+            <h3>Visits Management</h3>
+            <div class="controls">
+                <button onclick="loadVisits()">Load All Visits</button>
+                <button onclick="loadTodaysVisits()">Load Today's Visits</button>
+                <button onclick="loadVisitsByStatus()">Load by Status</button>
+                <select id="statusFilter" class="filter-select">
+                    <option value="scheduled">Scheduled</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="no_show">No Show</option>
+                </select>
+            </div>
+            <div id="visitsDisplay" class="data-display"></div>
+        </div>
+
+        <!-- Advanced Search Section -->
+        <div id="searchSection" class="section hidden">
+            <h3>Advanced Search</h3>
+            <div class="controls">
+                <input type="text" id="globalSearch" class="search-input" placeholder="Global search term...">
+                <button onclick="performGlobalSearch()">Global Search</button>
+                <button onclick="loadFilterCapabilities()">Show Filter Capabilities</button>
+            </div>
+            <div id="searchDisplay" class="data-display"></div>
+        </div>
+    </div>
+
+    <!-- Include the API client -->
+    <script src="PlaceManagementAPI.js"></script>
+
+    <script>
+        // Initialize API client
+        const api = new PlaceManagementAPI('http://localhost:3000');
+
+        // Login function
+        async function login() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const messageDiv = document.getElementById('loginMessage');
+
+            if (!email || !password) {
+                showMessage('Please enter both email and password', 'error');
+                return;
+            }
+
+            try {
+                showMessage('Logging in...', 'loading');
+                const result = await api.login(email, password);
+
+                if (result.success) {
+                    showMessage('Login successful!', 'success');
+                    showAuthenticatedContent();
+                    updateUserInfo();
+                } else {
+                    showMessage(`Login failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Login error: ${error.message}`, 'error');
+            }
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                await api.logout();
+                showMessage('Logged out successfully', 'success');
+                hideAuthenticatedContent();
+                clearUserInfo();
+            } catch (error) {
+                showMessage(`Logout error: ${error.message}`, 'error');
+            }
+        }
+
+        // Show authenticated content
+        function showAuthenticatedContent() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('userInfoSection').classList.remove('hidden');
+            document.getElementById('tablesSection').classList.remove('hidden');
+            document.getElementById('placesSection').classList.remove('hidden');
+            document.getElementById('visitorsSection').classList.remove('hidden');
+            document.getElementById('visitsSection').classList.remove('hidden');
+            document.getElementById('searchSection').classList.remove('hidden');
+        }
+
+        // Hide authenticated content
+        function hideAuthenticatedContent() {
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('userInfoSection').classList.add('hidden');
+            document.getElementById('tablesSection').classList.add('hidden');
+            document.getElementById('placesSection').classList.add('hidden');
+            document.getElementById('visitorsSection').classList.add('hidden');
+            document.getElementById('visitsSection').classList.add('hidden');
+            document.getElementById('searchSection').classList.add('hidden');
+        }
+
+        // Update user info display
+        function updateUserInfo() {
+            const user = api.getCurrentUser();
+            document.getElementById('userId').textContent = user.id;
+            document.getElementById('userRole').textContent = user.role;
+            document.getElementById('authStatus').textContent = user.isAuthenticated ? 'Authenticated' : 'Not Authenticated';
+        }
+
+        // Clear user info
+        function clearUserInfo() {
+            document.getElementById('userId').textContent = '';
+            document.getElementById('userRole').textContent = '';
+            document.getElementById('authStatus').textContent = '';
+        }
+
+        // Load allowed tables
+        async function loadAllowedTables() {
+            try {
+                showLoading('tablesDisplay');
+                const data = await api.getAllowedTables();
+                displayTables(data);
+            } catch (error) {
+                showError('tablesDisplay', error.message);
+            }
+        }
+
+        // Display tables data
+        function displayTables(data) {
+            const display = document.getElementById('tablesDisplay');
+            let html = `
+                <h4>Role: ${data.role}</h4>
+                <p><strong>Total Tables:</strong> ${data.tableCount}</p>
+                <h5>Allowed Tables:</h5>
+                <ul>
+            `;
+            
+            data.allowedTables.forEach(table => {
+                html += `<li>${table}</li>`;
+            });
+            
+            html += `</ul>`;
+            
+            display.innerHTML = html;
+        }
+
+        // Load table capabilities
+        async function loadTableCapabilities() {
+            try {
+                showLoading('tablesDisplay');
+                const data = await api.getFilterCapabilities();
+                displayCapabilities(data);
+            } catch (error) {
+                showError('tablesDisplay', error.message);
+            }
+        }
+
+        // Display capabilities
+        function displayCapabilities(data) {
+            const display = document.getElementById('tablesDisplay');
+            let html = `
+                <h4>Filter Capabilities for Role: ${data.role}</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            `;
+            
+            for (const [capability, info] of Object.entries(data.capabilities)) {
+                html += `
+                    <div class="data-item">
+                        <h5>${capability.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</h5>
+                        <p><strong>Available:</strong> ${info.available ? 'Yes' : 'No'}</p>
+                        <p><strong>Operators:</strong> ${info.operators.join(', ')}</p>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            display.innerHTML = html;
+        }
+
+        // Load places
+        async function loadPlaces() {
+            try {
+                showLoading('placesDisplay');
+                const data = await api.getPlaces();
+                displayPlaces(data);
+            } catch (error) {
+                showError('placesDisplay', error.message);
+            }
+        }
+
+        // Load active places
+        async function loadActivePlaces() {
+            try {
+                showLoading('placesDisplay');
+                const data = await api.getActivePlaces();
+                displayPlaces(data);
+            } catch (error) {
+                showError('placesDisplay', error.message);
+            }
+        }
+
+        // Load places by city
+        async function loadPlacesByCity() {
+            const city = document.getElementById('cityFilter').value;
+            if (!city) {
+                showMessage('Please select a city', 'error');
+                return;
+            }
+
+            try {
+                showLoading('placesDisplay');
+                const data = await api.getPlacesByCity(city);
+                displayPlaces(data);
+            } catch (error) {
+                showError('placesDisplay', error.message);
+            }
+        }
+
+        // Display places
+        function displayPlaces(data) {
+            const display = document.getElementById('placesDisplay');
+            let html = `<h4>Places (${data.length} records)</h4>`;
+            
+            if (data.length === 0) {
+                html += '<p>No places found</p>';
+            } else {
+                data.forEach(place => {
+                    html += `
+                        <div class="data-item">
+                            <h4>${place.name}</h4>
+                            <p><strong>Type:</strong> ${place.place_type}</p>
+                            <p><strong>Address:</strong> ${place.address}</p>
+                            <p><strong>City:</strong> ${place.city}</p>
+                            <p><strong>Capacity:</strong> ${place.capacity}</p>
+                            <p><strong>Status:</strong> ${place.is_active ? 'Active' : 'Inactive'}</p>
+                            <p><strong>Phone:</strong> ${place.phone}</p>
+                            <p><strong>Email:</strong> ${place.email}</p>
+                        </div>
+                    `;
+                });
+            }
+            
+            display.innerHTML = html;
+        }
+
+        // Load visitors
+        async function loadVisitors() {
+            try {
+                showLoading('visitorsDisplay');
+                const data = await api.getVisitors();
+                displayVisitors(data);
+            } catch (error) {
+                showError('visitorsDisplay', error.message);
+            }
+        }
+
+        // Load blacklisted visitors
+        async function loadBlacklistedVisitors() {
+            try {
+                showLoading('visitorsDisplay');
+                const data = await api.getBlacklistedVisitors();
+                displayVisitors(data);
+            } catch (error) {
+                showError('visitorsDisplay', error.message);
+            }
+        }
+
+        // Search visitors
+        async function searchVisitors() {
+            const searchTerm = document.getElementById('visitorSearch').value;
+            if (!searchTerm.trim()) {
+                showMessage('Please enter a search term', 'error');
+                return;
+            }
+
+            try {
+                showLoading('visitorsDisplay');
+                const data = await api.searchVisitorsByName(searchTerm);
+                displayVisitors(data);
+            } catch (error) {
+                showError('visitorsDisplay', error.message);
+            }
+        }
+
+        // Display visitors
+        function displayVisitors(data) {
+            const display = document.getElementById('visitorsDisplay');
+            let html = `<h4>Visitors (${data.length} records)</h4>`;
+            
+            if (data.length === 0) {
+                html += '<p>No visitors found</p>';
+            } else {
+                data.forEach(visitor => {
+                    html += `
+                        <div class="data-item">
+                            <h4>${visitor.first_name} ${visitor.last_name}</h4>
+                            <p><strong>Email:</strong> ${visitor.email}</p>
+                            <p><strong>Phone:</strong> ${visitor.phone}</p>
+                            <p><strong>Company:</strong> ${visitor.company}</p>
+                            <p><strong>Designation:</strong> ${visitor.designation}</p>
+                            <p><strong>Blacklisted:</strong> ${visitor.is_blacklisted ? 'Yes' : 'No'}</p>
+                        </div>
+                    `;
+                });
+            }
+            
+            display.innerHTML = html;
+        }
+
+        // Load visits
+        async function loadVisits() {
+            try {
+                showLoading('visitsDisplay');
+                const data = await api.getVisits();
+                displayVisits(data);
+            } catch (error) {
+                showError('visitsDisplay', error.message);
+            }
+        }
+
+        // Load today's visits
+        async function loadTodaysVisits() {
+            try {
+                showLoading('visitsDisplay');
+                const data = await api.getTodaysVisits();
+                displayVisits(data);
+            } catch (error) {
+                showError('visitsDisplay', error.message);
+            }
+        }
+
+        // Load visits by status
+        async function loadVisitsByStatus() {
+            const status = document.getElementById('statusFilter').value;
+            try {
+                showLoading('visitsDisplay');
+                const data = await api.getVisitsByStatus(status);
+                displayVisits(data);
+            } catch (error) {
+                showError('visitsDisplay', error.message);
+            }
+        }
+
+        // Display visits
+        function displayVisits(data) {
+            const display = document.getElementById('visitsDisplay');
+            let html = `<h4>Visits (${data.length} records)</h4>`;
+            
+            if (data.length === 0) {
+                html += '<p>No visits found</p>';
+            } else {
+                data.forEach(visit => {
+                    html += `
+                        <div class="data-item">
+                            <h4>Visit ID: ${visit.id}</h4>
+                            <p><strong>Visitor:</strong> ${visit.first_name} ${visit.last_name}</p>
+                            <p><strong>Purpose:</strong> ${visit.visit_purpose}</p>
+                            <p><strong>Host:</strong> ${visit.host_name}</p>
+                            <p><strong>Scheduled Start:</strong> ${new Date(visit.scheduled_start_time).toLocaleString()}</p>
+                            <p><strong>Scheduled End:</strong> ${new Date(visit.scheduled_end_time).toLocaleString()}</p>
+                            <p><strong>Status:</strong> ${visit.visit_status}</p>
+                            <p><strong>Check-in:</strong> ${visit.check_in_time ? new Date(visit.check_in_time).toLocaleString() : 'Not checked in'}</p>
+                        </div>
+                    `;
+                });
+            }
+            
+            display.innerHTML = html;
+        }
+
+        // Perform global search
+        async function performGlobalSearch() {
+            const searchTerm = document.getElementById('globalSearch').value;
+            if (!searchTerm.trim()) {
+                showMessage('Please enter a search term', 'error');
+                return;
+            }
+
+            try {
+                showLoading('searchDisplay');
+                const data = await api.globalSearch(searchTerm);
+                displayGlobalSearchResults(data);
+            } catch (error) {
+                showError('searchDisplay', error.message);
+            }
+        }
+
+        // Display global search results
+        function displayGlobalSearchResults(data) {
+            const display = document.getElementById('searchDisplay');
+            let html = `
+                <h4>Global Search Results</h4>
+                <p><strong>Search Term:</strong> "${data.searchTerm}"</p>
+                <p><strong>Total Results:</strong> ${data.totalResults}</p>
+                <p><strong>Tables with Results:</strong> ${data.tablesWithResults}</p>
+            `;
+            
+            if (data.totalResults === 0) {
+                html += '<p>No results found</p>';
+            } else {
+                data.resultsByTable.forEach(tableResult => {
+                    html += `
+                        <div class="data-item">
+                            <h5>Table: ${tableResult.table} (${tableResult.count} results)</h5>
+                            ${tableResult.results.slice(0, 3).map(result => {
+                                let resultHtml = '<div style="margin-left: 20px; margin-top: 10px;">';
+                                for (const [key, value] of Object.entries(result)) {
+                                    if (value !== null && value !== undefined) {
+                                        resultHtml += `<p><strong>${key}:</strong> ${value}</p>`;
+                                    }
+                                }
+                                resultHtml += '</div>';
+                                return resultHtml;
+                            }).join('')}
+                            ${tableResult.count > 3 ? '<p style="margin-left: 20px; font-style: italic;">... and more</p>' : ''}
+                        </div>
+                    `;
+                });
+            }
+            
+            display.innerHTML = html;
+        }
+
+        // Load filter capabilities
+        async function loadFilterCapabilities() {
+            try {
+                showLoading('searchDisplay');
+                const data = await api.getFilterCapabilities();
+                displayCapabilities(data);
+            } catch (error) {
+                showError('searchDisplay', error.message);
+            }
+        }
+
+        // Utility functions
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('loginMessage');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML = '<div class="loading">Loading...</div>';
+        }
+
+        function showError(elementId, error) {
+            document.getElementById(elementId).innerHTML = `<div class="error">Error: ${error}</div>`;
+        }
+
+        // Check if user is already authenticated on page load
+        window.addEventListener('load', () => {
+            if (api.tokenManager.isAuthenticated()) {
+                showAuthenticatedContent();
+                updateUserInfo();
+            }
+        });
+    </script>
+</body>
+</html>

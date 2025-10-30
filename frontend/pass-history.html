@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pass Assignment History</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            border-color: #007bff;
+            color: #007bff;
+        }
+
+        .filter-btn.active {
+            background: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+
+        .filter-btn.overdue {
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .filter-btn.overdue.active {
+            background: #dc3545;
+            color: white;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h2 {
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .records-count {
+            background: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .pass-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .pass-number {
+            background: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .pass-type {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .action-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .action-assigned {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .action-returned {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .action-lost {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .holder-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .holder-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .holder-phone {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .holder-type {
+            background: #e9ecef;
+            color: #495057;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .booking-info {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .date-time {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .date {
+            font-weight: 500;
+        }
+
+        .time {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-active .status-dot {
+            background: #28a745;
+        }
+
+        .status-overdue .status-dot {
+            background: #dc3545;
+        }
+
+        .status-returned .status-dot {
+            background: #17a2b8;
+        }
+
+        .status-lost .status-dot {
+            background: #ffc107;
+        }
+
+        .action-btn {
+            background: #ff8c00;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.3s;
+        }
+
+        .action-btn:hover {
+            background: #e07b00;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .pagination-btn {
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            background: white;
+            color: #007bff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #007bff;
+            color: white;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #dc3545;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .filter-group {
+                justify-content: center;
+            }
+
+            .table {
+                font-size: 12px;
+            }
+
+            .table th,
+            .table td {
+                padding: 8px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔄 Pass Assignment History</h1>
+            <p>Track and manage visitor pass assignments</p>
+            <div style="margin-top: 15px;">
+                <a href="index.html" style="color: #007bff; text-decoration: none; margin-right: 20px;">← Back to Dashboard</a>
+                <button onclick="logout()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Logout</button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <!-- Search Bar -->
+            <div class="search-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by holder name, pass number, booking...">
+            </div>
+
+            <!-- Status Filters -->
+            <div class="filter-row">
+                <div class="filter-group">
+                    <button class="filter-btn active" data-status="all">All</button>
+                    <button class="filter-btn overdue" data-status="overdue">▲ Overdue (0)</button>
+                    <button class="filter-btn" data-status="assigned">Assigned</button>
+                    <button class="filter-btn" data-status="returned">Returned</button>
+                    <button class="filter-btn" data-status="lost">Lost</button>
+                </div>
+            </div>
+
+            <!-- Date Filters -->
+            <div class="filter-row">
+                <div class="filter-group">
+                    <button class="filter-btn" data-date="all">All Dates</button>
+                    <button class="filter-btn" data-date="today">Today</button>
+                    <button class="filter-btn" data-date="yesterday">Yesterday</button>
+                    <button class="filter-btn" data-date="last_7_days">Last 7 Days</button>
+                    <button class="filter-btn" data-date="last_30_days">Last 30 Days</button>
+                    <button class="filter-btn" data-date="custom_range">Custom Range</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container">
+            <div class="table-header">
+                <h2>🔄 Pass Assignment History</h2>
+                <div class="records-count" id="recordsCount">0 Records</div>
+            </div>
+
+            <div id="tableContent">
+                <div class="loading">Loading pass history...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'http://localhost:3000/api';
+        let currentFilters = {
+            dateFilter: 'all',
+            statusFilter: 'all',
+            search: '',
+            page: 1,
+            limit: 20
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+            setupEventListeners();
+        });
+
+        // Check authentication
+        function checkAuthStatus() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+            loadPassHistory();
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('authToken');
+            window.location.href = 'index.html';
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', debounce(handleSearch, 500));
+
+            // Filter buttons
+            document.querySelectorAll('[data-status]').forEach(btn => {
+                btn.addEventListener('click', () => handleStatusFilter(btn.dataset.status));
+            });
+
+            document.querySelectorAll('[data-date]').forEach(btn => {
+                btn.addEventListener('click', () => handleDateFilter(btn.dataset.date));
+            });
+        }
+
+        // Load pass history
+        async function loadPassHistory() {
+            try {
+                showLoading();
+                
+                const params = new URLSearchParams(currentFilters);
+                const response = await fetch(`${API_BASE}/pass-history?${params}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayPassHistory(result.data);
+                    updateFilterCounts(result.data.counts);
+                } else {
+                    showError(result.message);
+                }
+            } catch (error) {
+                console.error('Error loading pass history:', error);
+                showError('Failed to load pass history');
+            }
+        }
+
+        // Display pass history
+        function displayPassHistory(data) {
+            const { records, pagination } = data;
+            const tableContent = document.getElementById('tableContent');
+
+            if (records.length === 0) {
+                tableContent.innerHTML = '<div class="no-data">No pass assignments found</div>';
+                document.getElementById('recordsCount').textContent = '0 Records';
+                return;
+            }
+
+            let html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Pass</th>
+                            <th>Action</th>
+                            <th>Holder</th>
+                            <th>Booking</th>
+                            <th>Assigned</th>
+                            <th>Returned</th>
+                            <th>Duration</th>
+                            <th>By</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            records.forEach(record => {
+                html += `
+                    <tr>
+                        <td>
+                            <div class="pass-info">
+                                <div class="pass-number">${record.pass_number}</div>
+                                <div class="pass-type">${record.pass_type_name}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="action-badge action-${record.action_type}">
+                                ${record.action_type.toUpperCase()}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="holder-info">
+                                <div class="holder-name">${record.holder_name}</div>
+                                <div class="holder-phone">${record.holder_phone || 'N/A'}</div>
+                                <div class="holder-type">${record.member_type}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="booking-info">
+                                ${record.booking_title || '—'}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="date-time">
+                                <div class="date">${formatDate(record.assigned_date)}</div>
+                                <div class="time">${formatTime(record.assigned_date)}</div>
+                            </div>
+                        </td>
+                        <td>
+                            ${record.actual_return_date ? 
+                                `<div class="date-time">
+                                    <div class="date">${formatDate(record.actual_return_date)}</div>
+                                    <div class="time">${formatTime(record.actual_return_date)}</div>
+                                </div>` : 
+                                '<span style="color: #ff8c00;">Not Returned</span>'
+                            }
+                        </td>
+                        <td>
+                            <span style="color: ${getDurationColor(record.duration_status)};">
+                                ${record.duration_status}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="date-time">
+                                <div class="date">${record.assigned_by_name || 'System'}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="status-badge status-${record.status.toLowerCase()}">
+                                <div class="status-dot"></div>
+                                <span>${record.status}</span>
+                            </div>
+                        </td>
+                        <td>
+                            ${record.action_type === 'assigned' && !record.actual_return_date ? 
+                                `<button class="action-btn" onclick="setReturnTime('${record.id}')">
+                                    🔄 Set Return Time
+                                </button>` : 
+                                '—'
+                            }
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                ${generatePagination(pagination)}
+            `;
+
+            tableContent.innerHTML = html;
+            document.getElementById('recordsCount').textContent = `${pagination.total} Records`;
+        }
+
+        // Filter handlers
+        function handleStatusFilter(status) {
+            // Update active button
+            document.querySelectorAll('[data-status]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-status="${status}"]`).classList.add('active');
+
+            // Update filter
+            currentFilters.statusFilter = status;
+            currentFilters.page = 1;
+            loadPassHistory();
+        }
+
+        function handleDateFilter(date) {
+            // Update active button
+            document.querySelectorAll('[data-date]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-date="${date}"]`).classList.add('active');
+
+            // Update filter
+            currentFilters.dateFilter = date;
+            currentFilters.page = 1;
+            loadPassHistory();
+        }
+
+        function handleSearch() {
+            currentFilters.search = document.getElementById('searchInput').value;
+            currentFilters.page = 1;
+            loadPassHistory();
+        }
+
+        // Update filter counts
+        function updateFilterCounts(counts) {
+            document.querySelector('[data-status="overdue"]').textContent = `▲ Overdue (${counts.overdue})`;
+            // Update other counts as needed
+        }
+
+        // Utility functions
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        function formatTime(dateString) {
+            return new Date(dateString).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        function getDurationColor(status) {
+            switch (status) {
+                case 'Overdue': return '#dc3545';
+                case 'Ongoing': return '#28a745';
+                case 'Returned': return '#17a2b8';
+                default: return '#6c757d';
+            }
+        }
+
+        function generatePagination(pagination) {
+            if (pagination.pages <= 1) return '';
+
+            let html = '<div class="pagination">';
+            
+            // Previous button
+            html += `<button class="pagination-btn" ${pagination.page === 1 ? 'disabled' : ''} onclick="changePage(${pagination.page - 1})">Previous</button>`;
+            
+            // Page info
+            html += `<span class="pagination-info">Page ${pagination.page} of ${pagination.pages}</span>`;
+            
+            // Next button
+            html += `<button class="pagination-btn" ${pagination.page === pagination.pages ? 'disabled' : ''} onclick="changePage(${pagination.page + 1})">Next</button>`;
+            
+            html += '</div>';
+            return html;
+        }
+
+        function changePage(page) {
+            currentFilters.page = page;
+            loadPassHistory();
+        }
+
+        function setReturnTime(assignmentId) {
+            const returnDate = prompt('Enter expected return date (YYYY-MM-DD):');
+            if (returnDate) {
+                // Call API to set return time
+                fetch(`${API_BASE}/pass-history/${assignmentId}/set-return-time`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ expectedReturnDate: returnDate })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Return time set successfully');
+                        loadPassHistory();
+                    } else {
+                        alert('Failed to set return time: ' + result.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error setting return time:', error);
+                    alert('Failed to set return time');
+                });
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('tableContent').innerHTML = '<div class="loading">Loading pass history...</div>';
+        }
+
+        function showError(message) {
+            document.getElementById('tableContent').innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>

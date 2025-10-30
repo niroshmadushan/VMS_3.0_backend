@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Email Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header p {
+            color: #6c757d;
+        }
+
+        .nav-links {
+            margin-top: 15px;
+        }
+
+        .nav-links a {
+            color: #007bff;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+        .nav-links button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .booking-selector {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .participants-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .participants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .participant-card {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .participant-card:hover {
+            border-color: #007bff;
+        }
+
+        .participant-card.selected {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+
+        .participant-card input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .participant-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .participant-email {
+            color: #6c757d;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .participant-company {
+            color: #495057;
+            font-size: 12px;
+        }
+
+        .email-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .email-preview {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .results-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .result-item {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #dc3545;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .participants-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📧 Booking Email Management</h1>
+            <p>Send booking details and reminders to participants</p>
+            <div class="nav-links">
+                <a href="index.html">← Back to Dashboard</a>
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Booking Selector -->
+        <div class="booking-selector">
+            <h3>Select Booking</h3>
+            <div class="form-group">
+                <label for="bookingId">Booking ID</label>
+                <input type="text" id="bookingId" placeholder="Enter booking ID or search...">
+            </div>
+            <button class="btn" onclick="loadBookingParticipants()">Load Participants</button>
+        </div>
+
+        <!-- Booking Info -->
+        <div id="bookingInfo" style="display: none;">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalParticipants">0</div>
+                    <div class="stat-label">Total Participants</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="participantsWithEmail">0</div>
+                    <div class="stat-label">With Email</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="selectedParticipants">0</div>
+                    <div class="stat-label">Selected</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Participants Section -->
+        <div id="participantsSection" class="participants-section" style="display: none;">
+            <h3>Select Participants</h3>
+            <div style="margin-bottom: 15px;">
+                <button class="btn" onclick="selectAllParticipants()">Select All</button>
+                <button class="btn" onclick="deselectAllParticipants()">Deselect All</button>
+                <button class="btn" onclick="selectOnlyWithEmail()">Select Only With Email</button>
+            </div>
+            <div id="participantsGrid" class="participants-grid"></div>
+        </div>
+
+        <!-- Email Section -->
+        <div id="emailSection" class="email-section" style="display: none;">
+            <h3>Email Options</h3>
+            
+            <div class="form-group">
+                <label for="emailType">Email Type</label>
+                <select id="emailType">
+                    <option value="booking_details">Booking Details</option>
+                    <option value="booking_confirmation">Booking Confirmation</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="customMessage">Custom Message (Optional)</label>
+                <textarea id="customMessage" rows="3" placeholder="Add any additional information..."></textarea>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn btn-success" onclick="sendBookingDetailsEmail()">📧 Send Booking Details</button>
+                <button class="btn btn-warning" onclick="sendReminderEmail()">⏰ Send Reminder</button>
+            </div>
+
+            <div id="emailPreview" class="email-preview" style="display: none;">
+                <h4>Email Preview</h4>
+                <div id="previewContent"></div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="results-section" style="display: none;">
+            <h3>Email Results</h3>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'http://localhost:3000/api';
+        let currentBooking = null;
+        let currentParticipants = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+            setupEventListeners();
+        });
+
+        // Check authentication
+        function checkAuthStatus() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('authToken');
+            window.location.href = 'index.html';
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            document.getElementById('bookingId').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadBookingParticipants();
+                }
+            });
+
+            document.getElementById('emailType').addEventListener('change', updateEmailPreview);
+            document.getElementById('customMessage').addEventListener('input', updateEmailPreview);
+        }
+
+        // Load booking participants
+        async function loadBookingParticipants() {
+            const bookingId = document.getElementById('bookingId').value.trim();
+            if (!bookingId) {
+                alert('Please enter a booking ID');
+                return;
+            }
+
+            try {
+                showLoading('participantsGrid');
+                
+                const response = await fetch(`${API_BASE}/booking-email/${bookingId}/participants`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentBooking = result.data.booking;
+                    currentParticipants = result.data.participants;
+                    displayBookingInfo(result.data);
+                    displayParticipants(result.data.participants);
+                    showSections();
+                } else {
+                    showError('participantsGrid', result.message);
+                }
+            } catch (error) {
+                console.error('Error loading participants:', error);
+                showError('participantsGrid', 'Failed to load participants');
+            }
+        }
+
+        // Display booking info
+        function displayBookingInfo(data) {
+            document.getElementById('totalParticipants').textContent = data.totalParticipants;
+            document.getElementById('participantsWithEmail').textContent = data.participantsWithEmail;
+            document.getElementById('bookingInfo').style.display = 'block';
+        }
+
+        // Display participants
+        function displayParticipants(participants) {
+            const grid = document.getElementById('participantsGrid');
+            
+            if (participants.length === 0) {
+                grid.innerHTML = '<div class="no-data">No participants found</div>';
+                return;
+            }
+
+            let html = '';
+            participants.forEach(participant => {
+                const hasEmail = participant.has_email;
+                html += `
+                    <div class="participant-card" data-participant-id="${participant.id}">
+                        <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                            <input type="checkbox" 
+                                   ${hasEmail ? '' : 'disabled'} 
+                                   onchange="updateSelectedCount()"
+                                   data-participant-id="${participant.id}">
+                            <div style="flex: 1;">
+                                <div class="participant-name">${participant.full_name}</div>
+                                <div class="participant-email">${participant.email || 'No email'}</div>
+                                <div class="participant-company">${participant.company_name || 'N/A'}</div>
+                                ${!hasEmail ? '<div style="color: #dc3545; font-size: 11px;">No email address</div>' : ''}
+                            </div>
+                        </label>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+            updateSelectedCount();
+        }
+
+        // Show sections
+        function showSections() {
+            document.getElementById('participantsSection').style.display = 'block';
+            document.getElementById('emailSection').style.display = 'block';
+        }
+
+        // Select all participants
+        function selectAllParticipants() {
+            document.querySelectorAll('#participantsGrid input[type="checkbox"]:not([disabled])').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateSelectedCount();
+        }
+
+        // Deselect all participants
+        function deselectAllParticipants() {
+            document.querySelectorAll('#participantsGrid input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateSelectedCount();
+        }
+
+        // Select only participants with email
+        function selectOnlyWithEmail() {
+            deselectAllParticipants();
+            selectAllParticipants();
+        }
+
+        // Update selected count
+        function updateSelectedCount() {
+            const selected = document.querySelectorAll('#participantsGrid input[type="checkbox"]:checked').length;
+            document.getElementById('selectedParticipants').textContent = selected;
+            updateEmailPreview();
+        }
+
+        // Send booking details email
+        async function sendBookingDetailsEmail() {
+            const selectedParticipants = getSelectedParticipants();
+            if (selectedParticipants.length === 0) {
+                alert('Please select at least one participant');
+                return;
+            }
+
+            const emailType = document.getElementById('emailType').value;
+            const customMessage = document.getElementById('customMessage').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/booking-email/${currentBooking.id}/send-details`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        participantIds: selectedParticipants,
+                        emailType: emailType,
+                        customMessage: customMessage
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result.data);
+                    alert(`Emails sent successfully! ${result.data.emailsSent} sent, ${result.data.emailsFailed} failed.`);
+                } else {
+                    alert('Failed to send emails: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error sending emails:', error);
+                alert('Failed to send emails');
+            }
+        }
+
+        // Send reminder email
+        async function sendReminderEmail() {
+            const selectedParticipants = getSelectedParticipants();
+            if (selectedParticipants.length === 0) {
+                alert('Please select at least one participant');
+                return;
+            }
+
+            const reminderType = prompt('Enter reminder type (24_hours or 1_hour):', '24_hours');
+            if (!reminderType) return;
+
+            const customMessage = document.getElementById('customMessage').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/booking-email/${currentBooking.id}/send-reminder`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reminderType: reminderType,
+                        customMessage: customMessage
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result.data);
+                    alert(`Reminder emails sent successfully! ${result.data.emailsSent} sent.`);
+                } else {
+                    alert('Failed to send reminder emails: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error sending reminder emails:', error);
+                alert('Failed to send reminder emails');
+            }
+        }
+
+        // Get selected participants
+        function getSelectedParticipants() {
+            const selected = [];
+            document.querySelectorAll('#participantsGrid input[type="checkbox"]:checked').forEach(checkbox => {
+                selected.push(checkbox.dataset.participantId);
+            });
+            return selected;
+        }
+
+        // Display results
+        function displayResults(data) {
+            const resultsContent = document.getElementById('resultsContent');
+            const resultsSection = document.getElementById('resultsSection');
+            
+            let html = `
+                <div class="result-item result-success">
+                    <div>
+                        <strong>Booking:</strong> ${data.bookingTitle}<br>
+                        <strong>Total Participants:</strong> ${data.totalParticipants}<br>
+                        <strong>Emails Sent:</strong> ${data.emailsSent}<br>
+                        <strong>Emails Failed:</strong> ${data.emailsFailed}
+                    </div>
+                </div>
+            `;
+
+            if (data.results) {
+                data.results.forEach(result => {
+                    const resultClass = result.success ? 'result-success' : 'result-error';
+                    html += `
+                        <div class="result-item ${resultClass}">
+                            <div>
+                                <strong>${result.participantName}</strong><br>
+                                ${result.participantEmail}<br>
+                                <small>${result.message}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            resultsContent.innerHTML = html;
+            resultsSection.style.display = 'block';
+        }
+
+        // Update email preview
+        function updateEmailPreview() {
+            const emailType = document.getElementById('emailType').value;
+            const customMessage = document.getElementById('customMessage').value;
+            const selectedCount = document.querySelectorAll('#participantsGrid input[type="checkbox"]:checked').length;
+
+            if (selectedCount === 0) {
+                document.getElementById('emailPreview').style.display = 'none';
+                return;
+            }
+
+            const previewContent = document.getElementById('previewContent');
+            let preview = `
+                <p><strong>Email Type:</strong> ${emailType.replace('_', ' ').toUpperCase()}</p>
+                <p><strong>Recipients:</strong> ${selectedCount} participant(s)</p>
+            `;
+
+            if (customMessage) {
+                preview += `<p><strong>Custom Message:</strong> ${customMessage}</p>`;
+            }
+
+            previewContent.innerHTML = preview;
+            document.getElementById('emailPreview').style.display = 'block';
+        }
+
+        // Utility functions
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML = '<div class="loading">Loading...</div>';
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).innerHTML = `<div class="error">${message}</div>`;
+        }
+    </script>
+</body>
+</html>

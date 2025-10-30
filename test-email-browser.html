@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Booking Email API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+        }
+        .step h3 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Booking Email API</h1>
+        <p style="text-align: center; color: #6c757d;">Test sending emails to niroshmax01@gmail.com</p>
+
+        <div class="form-group">
+            <label for="jwtToken">JWT Token</label>
+            <input type="text" id="jwtToken" placeholder="Enter your JWT token here...">
+            <small style="color: #6c757d;">Get this from your browser's localStorage after logging in</small>
+        </div>
+
+        <div class="form-group">
+            <label for="bookingId">Booking ID (Optional)</label>
+            <input type="text" id="bookingId" placeholder="Enter booking ID or leave empty to use first available booking">
+        </div>
+
+        <div class="form-group">
+            <label for="testEmail">Test Email</label>
+            <input type="email" id="testEmail" value="niroshmax01@gmail.com" readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="customMessage">Custom Message</label>
+            <textarea id="customMessage" rows="3" placeholder="Enter custom message for the email...">This is a test email from the booking email API. Please check your inbox!</textarea>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="btn" onclick="runFullTest()">🚀 Run Full Test</button>
+            <button class="btn btn-success" onclick="sendBookingDetails()">📧 Send Booking Details</button>
+            <button class="btn btn-warning" onclick="sendReminder()">⏰ Send Reminder</button>
+            <button class="btn" onclick="getParticipants()">👥 Get Participants</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let currentBooking = null;
+        let currentParticipants = [];
+
+        function showResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        function showStep(stepNumber, title, content) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML += `
+                <div class="step">
+                    <h3>Step ${stepNumber}: ${title}</h3>
+                    <div>${content}</div>
+                </div>
+            `;
+        }
+
+        async function runFullTest() {
+            const token = document.getElementById('jwtToken').value.trim();
+            if (!token) {
+                showResult('Please enter your JWT token first!', 'error');
+                return;
+            }
+
+            showResult('Starting full test...', 'info');
+
+            try {
+                // Step 1: Get bookings
+                showStep(1, 'Getting Bookings', 'Loading...');
+                const bookings = await getBookings(token);
+                if (bookings.length === 0) {
+                    showResult('No bookings found. Please create a booking first.', 'error');
+                    return;
+                }
+
+                currentBooking = bookings[0];
+                showStep(1, 'Getting Bookings', `✅ Found booking: ${currentBooking.title} (ID: ${currentBooking.id})`);
+
+                // Step 2: Get participants
+                showStep(2, 'Getting Participants', 'Loading...');
+                const participants = await getBookingParticipants(token, currentBooking.id);
+                showStep(2, 'Getting Participants', `✅ Found ${participants.length} participants`);
+
+                // Step 3: Add test participant if needed
+                const testEmail = document.getElementById('testEmail').value;
+                let targetParticipant = participants.find(p => p.email === testEmail);
+                
+                if (!targetParticipant) {
+                    showStep(3, 'Adding Test Participant', 'Loading...');
+                    targetParticipant = await addTestParticipant(token, currentBooking.id, testEmail);
+                    showStep(3, 'Adding Test Participant', `✅ Added participant: ${targetParticipant.full_name}`);
+                } else {
+                    showStep(3, 'Using Existing Participant', `✅ Using: ${targetParticipant.full_name}`);
+                }
+
+                // Step 4: Send booking details email
+                showStep(4, 'Sending Booking Details Email', 'Loading...');
+                const emailResult = await sendBookingDetailsEmail(token, currentBooking.id, [targetParticipant.id]);
+                showStep(4, 'Sending Booking Details Email', `✅ Email sent: ${emailResult.emailsSent} successful, ${emailResult.emailsFailed} failed`);
+
+                // Step 5: Send reminder email
+                showStep(5, 'Sending Reminder Email', 'Loading...');
+                const reminderResult = await sendReminderEmail(token, currentBooking.id);
+                showStep(5, 'Sending Reminder Email', `✅ Reminder sent: ${reminderResult.emailsSent} successful`);
+
+                showResult('🎉 Full test completed successfully! Check your email inbox.', 'success');
+
+            } catch (error) {
+                showResult(`❌ Test failed: ${error.message}`, 'error');
+                console.error('Test error:', error);
+            }
+        }
+
+        async function getBookings(token) {
+            const response = await fetch(`${API_BASE}/secure-select/bookings?limit=5`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(`Failed to get bookings: ${result.message}`);
+            }
+
+            return result.data || [];
+        }
+
+        async function getBookingParticipants(token, bookingId) {
+            const response = await fetch(`${API_BASE}/booking-email/${bookingId}/participants`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(`Failed to get participants: ${result.message}`);
+            }
+
+            return result.data.participants;
+        }
+
+        async function addTestParticipant(token, bookingId, email) {
+            const response = await fetch(`${API_BASE}/secure-insert/external_participants`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    booking_id: bookingId,
+                    full_name: 'Nirosh Madushan',
+                    email: email,
+                    phone: '+1234567890',
+                    company_name: 'Test Company',
+                    member_type: 'visitor'
+                })
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(`Failed to add participant: ${result.message}`);
+            }
+
+            return result.data;
+        }
+
+        async function sendBookingDetailsEmail(token, bookingId, participantIds) {
+            const customMessage = document.getElementById('customMessage').value;
+            
+            const response = await fetch(`${API_BASE}/booking-email/${bookingId}/send-details`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    participantIds: participantIds,
+                    emailType: 'booking_details',
+                    customMessage: customMessage
+                })
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(`Failed to send email: ${result.message}`);
+            }
+
+            return result.data;
+        }
+
+        async function sendReminderEmail(token, bookingId) {
+            const customMessage = document.getElementById('customMessage').value;
+            
+            const response = await fetch(`${API_BASE}/booking-email/${bookingId}/send-reminder`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    reminderType: '24_hours',
+                    customMessage: customMessage
+                })
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(`Failed to send reminder: ${result.message}`);
+            }
+
+            return result.data;
+        }
+
+        // Individual test functions
+        async function sendBookingDetails() {
+            const token = document.getElementById('jwtToken').value.trim();
+            if (!token) {
+                showResult('Please enter your JWT token first!', 'error');
+                return;
+            }
+
+            try {
+                const bookingId = document.getElementById('bookingId').value.trim();
+                if (!bookingId) {
+                    showResult('Please enter a booking ID!', 'error');
+                    return;
+                }
+
+                const participants = await getBookingParticipants(token, bookingId);
+                if (participants.length === 0) {
+                    showResult('No participants found for this booking.', 'error');
+                    return;
+                }
+
+                const testEmail = document.getElementById('testEmail').value;
+                let targetParticipant = participants.find(p => p.email === testEmail);
+                
+                if (!targetParticipant) {
+                    targetParticipant = participants[0];
+                    showResult(`Test email not found. Using first participant: ${targetParticipant.email}`, 'info');
+                }
+
+                const result = await sendBookingDetailsEmail(token, bookingId, [targetParticipant.id]);
+                showResult(`✅ Booking details email sent successfully!\nEmails sent: ${result.emailsSent}\nEmails failed: ${result.emailsFailed}`, 'success');
+
+            } catch (error) {
+                showResult(`❌ Failed to send booking details: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendReminder() {
+            const token = document.getElementById('jwtToken').value.trim();
+            if (!token) {
+                showResult('Please enter your JWT token first!', 'error');
+                return;
+            }
+
+            try {
+                const bookingId = document.getElementById('bookingId').value.trim();
+                if (!bookingId) {
+                    showResult('Please enter a booking ID!', 'error');
+                    return;
+                }
+
+                const result = await sendReminderEmail(token, bookingId);
+                showResult(`✅ Reminder email sent successfully!\nEmails sent: ${result.emailsSent}`, 'success');
+
+            } catch (error) {
+                showResult(`❌ Failed to send reminder: ${error.message}`, 'error');
+            }
+        }
+
+        async function getParticipants() {
+            const token = document.getElementById('jwtToken').value.trim();
+            if (!token) {
+                showResult('Please enter your JWT token first!', 'error');
+                return;
+            }
+
+            try {
+                const bookingId = document.getElementById('bookingId').value.trim();
+                if (!bookingId) {
+                    showResult('Please enter a booking ID!', 'error');
+                    return;
+                }
+
+                const participants = await getBookingParticipants(token, bookingId);
+                let result = `✅ Found ${participants.length} participants:\n\n`;
+                
+                participants.forEach((p, index) => {
+                    result += `${index + 1}. ${p.full_name}\n`;
+                    result += `   Email: ${p.email || 'No email'}\n`;
+                    result += `   Company: ${p.company_name || 'N/A'}\n`;
+                    result += `   Type: ${p.member_type}\n\n`;
+                });
+
+                showResult(result, 'info');
+
+            } catch (error) {
+                showResult(`❌ Failed to get participants: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-fill JWT token from localStorage if available
+        window.addEventListener('load', function() {
+            const savedToken = localStorage.getItem('authToken');
+            if (savedToken) {
+                document.getElementById('jwtToken').value = savedToken;
+            }
+        });
+    </script>
+</body>
+</html>

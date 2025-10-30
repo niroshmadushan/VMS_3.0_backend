@@ -1,0 +1,758 @@
+================================================================================
+                    AUTHENTICATION BACKEND API INTEGRATION GUIDE
+================================================================================
+
+📋 OVERVIEW
+-----------
+This is a complete Express.js authentication backend with advanced security features
+including email verification, OTP-based login, password reset, and session management.
+
+🌐 BASE CONFIGURATION
+--------------------
+Base URL: http://localhost:3000
+API Base: http://localhost:3000/api
+Health Check: http://localhost:3000/health
+
+🔑 REQUIRED HEADERS (All API calls)
+----------------------------------
+Content-Type: application/json
+X-App-ID: your_unique_app_id_here
+X-Service-Key: your_service_key_here
+Authorization: Bearer <jwt-token> (for authenticated endpoints)
+
+================================================================================
+                           AUTHENTICATION ENDPOINTS
+================================================================================
+
+1. USER REGISTRATION
+-------------------
+POST /api/auth/signup
+
+Headers:
+  Content-Type: application/json
+  X-App-ID: your_unique_app_id_here
+  X-Service-Key: your_service_key_here
+
+Request Body:
+{
+  "email": "user@example.com",
+  "firstName": "John",
+  "lastName": "Doe", 
+  "password": "SecurePass123!",
+  "role": "user"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "User registered successfully. Please verify your email.",
+  "data": {
+    "userId": 1,
+    "email": "user@example.com",
+    "emailVerificationRequired": true
+  }
+}
+
+Response (Error):
+{
+  "success": false,
+  "message": "Email already exists"
+}
+
+2. EMAIL VERIFICATION
+--------------------
+POST /api/auth/verify-email
+
+Headers:
+  Content-Type: application/json
+
+Request Body:
+{
+  "token": "verification-token-from-email"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "Email verified successfully"
+}
+
+Response (Already Verified):
+{
+  "success": true,
+  "message": "Email is already verified"
+}
+
+3. USER LOGIN
+------------
+POST /api/auth/login
+
+Headers:
+  Content-Type: application/json
+  X-App-ID: your_unique_app_id_here
+  X-Service-Key: your_service_key_here
+
+Request Body:
+{
+  "email": "user@example.com",
+  "password": "SecurePass123!"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "Verification code sent to your email",
+  "data": {
+    "email": "user@example.com",
+    "otpRequired": true
+  }
+}
+
+4. OTP VERIFICATION (Complete Login)
+-----------------------------------
+POST /api/auth/verify-otp
+
+Headers:
+  Content-Type: application/json
+  X-App-ID: your_unique_app_id_here
+  X-Service-Key: your_service_key_here
+
+Request Body:
+{
+  "email": "user@example.com",
+  "otpCode": "123456"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "role": "user"
+    },
+    "sessionId": "session-uuid-here"
+  }
+}
+
+5. PASSWORD RESET REQUEST
+------------------------
+POST /api/auth/password-reset
+
+Headers:
+  Content-Type: application/json
+  X-App-ID: your_unique_app_id_here
+  X-Service-Key: your_service_key_here
+
+Request Body:
+{
+  "email": "user@example.com"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "Password reset code sent to your email"
+}
+
+6. PASSWORD RESET OTP VERIFICATION
+---------------------------------
+POST /api/auth/password-reset/verify-otp
+
+Headers:
+  Content-Type: application/json
+  X-App-ID: your_unique_app_id_here
+  X-Service-Key: your_service_key_here
+
+Request Body:
+{
+  "email": "user@example.com",
+  "otpCode": "123456"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "OTP verified successfully"
+}
+
+7. PASSWORD RESET CONFIRMATION
+-----------------------------
+POST /api/auth/password-reset/confirm
+
+Headers:
+  Content-Type: application/json
+  X-App-ID: your_unique_app_id_here
+  X-Service-Key: your_service_key_here
+
+Request Body:
+{
+  "email": "user@example.com",
+  "otpCode": "123456",
+  "newPassword": "NewSecurePass123!"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "Password reset successfully"
+}
+
+8. CHANGE PASSWORD (Authenticated)
+---------------------------------
+POST /api/auth/change-password
+
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer <jwt-token>
+
+Request Body:
+{
+  "currentPassword": "OldPass123!",
+  "newPassword": "NewSecurePass123!"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "Password changed successfully"
+}
+
+9. TOKEN VALIDATION
+------------------
+POST /api/auth/validate-token
+
+Headers:
+  Content-Type: application/json
+
+Request Body:
+{
+  "token": "jwt-token-here"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "Token is valid",
+  "data": {
+    "userId": 1,
+    "email": "user@example.com",
+    "role": "user"
+  }
+}
+
+10. REFRESH TOKEN
+----------------
+POST /api/auth/refresh-token
+
+Headers:
+  Content-Type: application/json
+
+Request Body:
+{
+  "refreshToken": "refresh-token-here"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "Token refreshed successfully",
+  "data": {
+    "token": "new-jwt-token-here"
+  }
+}
+
+11. LOGOUT
+---------
+POST /api/auth/logout
+
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer <jwt-token>
+
+Response (Success):
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+
+12. LOGOUT ALL DEVICES
+--------------------
+POST /api/auth/logout-all
+
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer <jwt-token>
+
+Response (Success):
+{
+  "success": true,
+  "message": "Logged out from all devices successfully"
+}
+
+13. GET USER SESSIONS
+--------------------
+GET /api/auth/sessions
+
+Headers:
+  Authorization: Bearer <jwt-token>
+
+Response (Success):
+{
+  "success": true,
+  "data": {
+    "sessions": [
+      {
+        "sessionId": "session-1",
+        "device": "Chrome on Windows",
+        "lastActive": "2025-09-29T10:30:00Z",
+        "isCurrent": true
+      }
+    ]
+  }
+}
+
+14. TERMINATE SPECIFIC SESSION
+-----------------------------
+DELETE /api/auth/sessions/:sessionId
+
+Headers:
+  Authorization: Bearer <jwt-token>
+
+Response (Success):
+{
+  "success": true,
+  "message": "Session terminated successfully"
+}
+
+================================================================================
+                              ADMIN ENDPOINTS
+================================================================================
+
+All admin endpoints require authentication and admin role.
+
+15. GET ALL USERS
+----------------
+GET /api/admin/users
+
+Headers:
+  Authorization: Bearer <jwt-token>
+
+Response (Success):
+{
+  "success": true,
+  "data": {
+    "users": [
+      {
+        "id": 1,
+        "email": "user@example.com",
+        "firstName": "John",
+        "lastName": "Doe",
+        "role": "user",
+        "isEmailVerified": true,
+        "createdAt": "2025-09-29T10:00:00Z"
+      }
+    ]
+  }
+}
+
+16. GET USER BY ID
+-----------------
+GET /api/admin/users/:userId
+
+Headers:
+  Authorization: Bearer <jwt-token>
+
+Response (Success):
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "role": "user",
+      "isEmailVerified": true,
+      "createdAt": "2025-09-29T10:00:00Z"
+    }
+  }
+}
+
+17. UPDATE USER ROLE
+-------------------
+PUT /api/admin/users/:userId/role
+
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer <jwt-token>
+
+Request Body:
+{
+  "role": "admin"
+}
+
+Response (Success):
+{
+  "success": true,
+  "message": "User role updated successfully"
+}
+
+18. TOGGLE USER LOCK
+-------------------
+PUT /api/admin/users/:userId/lock
+
+Headers:
+  Authorization: Bearer <jwt-token>
+
+Response (Success):
+{
+  "success": true,
+  "message": "User lock status updated"
+}
+
+19. DELETE USER
+--------------
+DELETE /api/admin/users/:userId
+
+Headers:
+  Authorization: Bearer <jwt-token>
+
+Response (Success):
+{
+  "success": true,
+  "message": "User deleted successfully"
+}
+
+20. GET SYSTEM STATISTICS
+------------------------
+GET /api/admin/stats
+
+Headers:
+  Authorization: Bearer <jwt-token>
+
+Response (Success):
+{
+  "success": true,
+  "data": {
+    "totalUsers": 150,
+    "verifiedUsers": 145,
+    "totalLogins": 1250,
+    "activeSessions": 45
+  }
+}
+
+21. GET LOGIN ANALYTICS
+----------------------
+GET /api/admin/analytics/logins
+
+Headers:
+  Authorization: Bearer <jwt-token>
+
+Response (Success):
+{
+  "success": true,
+  "data": {
+    "dailyLogins": [
+      {
+        "date": "2025-09-29",
+        "count": 45
+      }
+    ],
+    "monthlyLogins": [
+      {
+        "month": "2025-09",
+        "count": 1250
+      }
+    ]
+  }
+}
+
+================================================================================
+                              SYSTEM ENDPOINTS
+================================================================================
+
+22. HEALTH CHECK
+---------------
+GET /health
+
+Response (Success):
+{
+  "success": true,
+  "message": "Server is running",
+  "timestamp": "2025-09-29T10:30:00Z",
+  "environment": "development"
+}
+
+23. API INFORMATION
+------------------
+GET /
+
+Response (Success):
+{
+  "success": true,
+  "message": "Authentication API Server",
+  "version": "1.0.0",
+  "endpoints": {
+    "auth": "/api/auth",
+    "admin": "/api/admin",
+    "health": "/health"
+  },
+  "documentation": "Check README.md for API documentation"
+}
+
+24. EMAIL VERIFICATION PAGE
+--------------------------
+GET /verify-email?token=verification-token
+
+This serves an HTML page for email verification with automatic token processing.
+
+================================================================================
+                              SECURITY FEATURES
+================================================================================
+
+RATE LIMITING:
+- Auth Endpoints: 5 requests per 15 minutes
+- OTP Endpoints: 3 requests per 10 minutes
+- Password Reset: 3 requests per hour
+
+AUTHENTICATION FLOW:
+1. Signup → Email verification required
+2. Login → Password + OTP verification
+3. Password Reset → Email + OTP + New password
+
+TOKEN MANAGEMENT:
+- JWT Tokens: For API authentication
+- Session Tracking: Multiple device support
+- Token Refresh: Automatic token renewal
+- Logout: Single or all devices
+
+EMAIL INTEGRATION:
+- Provider: Resend SMTP
+- From: onboarding@resend.dev
+- Features: HTML templates, clickable buttons
+- OTP System: 6-digit codes with 10-minute expiration
+
+================================================================================
+                              ERROR RESPONSES
+================================================================================
+
+All APIs return consistent error format:
+
+{
+  "success": false,
+  "message": "Error description",
+  "code": "ERROR_CODE"
+}
+
+COMMON ERROR CODES:
+- VALIDATION_ERROR: Input validation failed
+- AUTHENTICATION_ERROR: Invalid credentials
+- AUTHORIZATION_ERROR: Insufficient permissions
+- RATE_LIMIT_ERROR: Too many requests
+- EMAIL_ERROR: Email sending failed
+- OTP_ERROR: Invalid or expired OTP
+- TOKEN_ERROR: Invalid or expired token
+
+COMMON HTTP STATUS CODES:
+- 200: Success
+- 400: Bad Request (validation errors)
+- 401: Unauthorized (invalid credentials)
+- 403: Forbidden (insufficient permissions)
+- 429: Too Many Requests (rate limited)
+- 500: Internal Server Error
+
+================================================================================
+                              FRONTEND INTEGRATION
+================================================================================
+
+COMPLETE SIGNUP FLOW (JavaScript/React):
+----------------------------------------
+
+// 1. User Registration
+const signup = async (userData) => {
+  const response = await fetch('http://localhost:3000/api/auth/signup', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-ID': 'your_unique_app_id_here',
+      'X-Service-Key': 'your_service_key_here'
+    },
+    body: JSON.stringify(userData)
+  });
+  return await response.json();
+};
+
+// 2. Email Verification (handled automatically via email link)
+// User clicks link in email → redirects to /verify-email?token=xxx
+
+// 3. Login
+const login = async (email, password) => {
+  const response = await fetch('http://localhost:3000/api/auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-ID': 'your_unique_app_id_here',
+      'X-Service-Key': 'your_service_key_here'
+    },
+    body: JSON.stringify({ email, password })
+  });
+  return await response.json();
+};
+
+// 4. OTP Verification
+const verifyOTP = async (email, otpCode) => {
+  const response = await fetch('http://localhost:3000/api/auth/verify-otp', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-ID': 'your_unique_app_id_here',
+      'X-Service-Key': 'your_service_key_here'
+    },
+    body: JSON.stringify({ email, otpCode })
+  });
+  return await response.json();
+};
+
+// 5. Store JWT Token
+const token = loginResponse.data.token;
+localStorage.setItem('authToken', token);
+
+// 6. Use Token for Authenticated Requests
+const authenticatedRequest = async (url, options = {}) => {
+  const token = localStorage.getItem('authToken');
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...options.headers
+    }
+  });
+};
+
+PASSWORD RESET FLOW:
+-------------------
+
+// 1. Request Password Reset
+const requestPasswordReset = async (email) => {
+  const response = await fetch('http://localhost:3000/api/auth/password-reset', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-ID': 'your_unique_app_id_here',
+      'X-Service-Key': 'your_service_key_here'
+    },
+    body: JSON.stringify({ email })
+  });
+  return await response.json();
+};
+
+// 2. Verify OTP
+const verifyResetOTP = async (email, otpCode) => {
+  const response = await fetch('http://localhost:3000/api/auth/password-reset/verify-otp', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-ID': 'your_unique_app_id_here',
+      'X-Service-Key': 'your_service_key_here'
+    },
+    body: JSON.stringify({ email, otpCode })
+  });
+  return await response.json();
+};
+
+// 3. Reset Password
+const resetPassword = async (email, otpCode, newPassword) => {
+  const response = await fetch('http://localhost:3000/api/auth/password-reset/confirm', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-ID': 'your_unique_app_id_here',
+      'X-Service-Key': 'your_service_key_here'
+    },
+    body: JSON.stringify({ email, otpCode, newPassword })
+  });
+  return await response.json();
+};
+
+================================================================================
+                              TESTING EXAMPLES
+================================================================================
+
+CURL COMMANDS:
+
+// Test Health Check
+curl http://localhost:3000/health
+
+// Test Signup
+curl -X POST http://localhost:3000/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -H "X-App-ID: your_unique_app_id_here" \
+  -H "X-Service-Key: your_service_key_here" \
+  -d '{"email":"test@example.com","firstName":"John","lastName":"Doe","password":"Pass123!","role":"user"}'
+
+// Test Login
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -H "X-App-ID: your_unique_app_id_here" \
+  -H "X-Service-Key: your_service_key_here" \
+  -d '{"email":"test@example.com","password":"Pass123!"}'
+
+// Test OTP Verification
+curl -X POST http://localhost:3000/api/auth/verify-otp \
+  -H "Content-Type: application/json" \
+  -H "X-App-ID: your_unique_app_id_here" \
+  -H "X-Service-Key: your_service_key_here" \
+  -d '{"email":"test@example.com","otpCode":"123456"}'
+
+================================================================================
+                              PRODUCTION NOTES
+================================================================================
+
+ENVIRONMENT VARIABLES:
+- Update config.env for production
+- Set secure JWT secrets
+- Configure production SMTP
+- Set up proper CORS origins
+- Use HTTPS in production
+
+SECURITY CONSIDERATIONS:
+- Always use HTTPS in production
+- Implement proper CORS policies
+- Set secure cookie options
+- Use environment variables for secrets
+- Implement proper logging
+
+DATABASE:
+- MySQL database: auth-db
+- Host: localhost:3306
+- User: root
+- Password: (empty for development)
+
+EMAIL SERVICE:
+- Provider: Resend SMTP
+- Domain: onboarding@resend.dev
+- For production: Verify your own domain
+
+================================================================================
+                              SUPPORT & CONTACT
+================================================================================
+
+For technical support or questions about this authentication backend:
+- Check the server logs for detailed error messages
+- Verify all required headers are included
+- Ensure the server is running on port 3000
+- Check database connectivity
+- Verify SMTP configuration
+
+Server Status: http://localhost:3000/health
+API Documentation: This file
+Version: 1.0.0
+
+================================================================================
+                              END OF DOCUMENTATION
+================================================================================

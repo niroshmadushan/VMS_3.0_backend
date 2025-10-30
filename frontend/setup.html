@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Setup Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .step h3 {
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Frontend Setup Guide</h1>
+        
+        <div class="success">
+            <strong>✅ Setup Complete!</strong> Your frontend is ready to use.
+        </div>
+
+        <div class="step">
+            <h3>1. Start Your Backend Server</h3>
+            <p>Make sure your backend server is running on port 3000:</p>
+            <div class="code">node server.js</div>
+            <p>Or use the batch file:</p>
+            <div class="code">restart-server.bat</div>
+        </div>
+
+        <div class="step">
+            <h3>2. Access the Frontend</h3>
+            <p>Open your web browser and navigate to:</p>
+            <div class="code">http://localhost:3000/frontend/index.html</div>
+            <p>Or simply double-click the index.html file in the frontend folder.</p>
+        </div>
+
+        <div class="step">
+            <h3>3. Login Credentials</h3>
+            <p>Use your existing user credentials to login. If you don't have an account, create one through the registration process.</p>
+            <div class="warning">
+                <strong>Note:</strong> Make sure your backend database has the required tables (pass_assignments, external_members, etc.) for the pass history to work properly.
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>4. Available Features</h3>
+            <ul>
+                <li><strong>🔄 Pass Assignment History</strong> - View and manage visitor pass assignments</li>
+                <li><strong>👥 User Management</strong> - Manage system users and roles</li>
+                <li><strong>🏢 Place Management</strong> - Manage places and visitors</li>
+                <li><strong>📅 Meeting Management</strong> - Schedule and manage meetings</li>
+                <li><strong>📋 Booking Management</strong> - Create and manage bookings</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>5. Quick Start</h3>
+            <p>Click the button below to open the main dashboard:</p>
+            <a href="index.html" class="btn btn-success">Open Dashboard</a>
+            <a href="pass-history.html" class="btn">Open Pass History</a>
+        </div>
+
+        <div class="step">
+            <h3>6. Troubleshooting</h3>
+            <p>If you encounter any issues:</p>
+            <ul>
+                <li>Check that the backend server is running on port 3000</li>
+                <li>Verify your database connection</li>
+                <li>Check the browser console for any JavaScript errors</li>
+                <li>Ensure all required database tables exist</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>7. API Endpoints</h3>
+            <p>The frontend uses these API endpoints:</p>
+            <div class="code">
+                POST /api/auth/login - User authentication<br>
+                GET /api/pass-history - Pass assignment history<br>
+                GET /api/dashboard/statistics - Dashboard statistics<br>
+                POST /api/pass-history/:id/set-return-time - Set return time
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

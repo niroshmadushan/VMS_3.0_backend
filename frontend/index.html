@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .login-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .login-section h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .dashboard {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .dashboard-title {
+            color: #2c3e50;
+            font-size: 2rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .nav-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .nav-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-color: #007bff;
+        }
+
+        .nav-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-card p {
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .nav-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Section -->
+        <div id="loginSection" class="login-section">
+            <h2>🔐 Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn" id="loginBtn">Login</button>
+                <div id="loginMessage" class="message" style="display: none;"></div>
+            </form>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboardSection" class="dashboard">
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">🏢 Visitor Management System</h1>
+                <div class="user-info">
+                    <span class="user-name" id="userName">Welcome!</span>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="loading">Loading statistics...</div>
+            </div>
+
+            <!-- Navigation Cards -->
+            <div class="nav-cards">
+                <a href="pass-history.html" class="nav-card">
+                    <h3>🔄 Pass Assignment History</h3>
+                    <p>View and manage visitor pass assignments, track returns, and monitor overdue passes.</p>
+                </a>
+
+                <a href="user-management-example.html" class="nav-card">
+                    <h3>👥 User Management</h3>
+                    <p>Manage system users, roles, and permissions for staff and administrators.</p>
+                </a>
+
+                <a href="example.html" class="nav-card">
+                    <h3>🏢 Place Management</h3>
+                    <p>Manage places, visitors, and visits with comprehensive tracking and reporting.</p>
+                </a>
+
+                <a href="meeting-table-example.html" class="nav-card">
+                    <h3>📅 Meeting Management</h3>
+                    <p>Schedule and manage meetings, track participants, and monitor meeting history.</p>
+                </a>
+
+                <a href="booking-table-example.html" class="nav-card">
+                    <h3>📋 Booking Management</h3>
+                    <p>Create and manage bookings, track attendance, and handle booking operations.</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'http://localhost:3000/api';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+            setupEventListeners();
+        });
+
+        // Event Listeners
+        function setupEventListeners() {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        }
+
+        // Check if user is already logged in
+        function checkAuthStatus() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                // Verify token is still valid
+                verifyToken(token);
+            }
+        }
+
+        // Verify token
+        async function verifyToken(token) {
+            try {
+                const response = await fetch(`${API_BASE}/auth/verify-token`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        showDashboard(result.data.user);
+                        loadDashboardStats();
+                    } else {
+                        localStorage.removeItem('authToken');
+                        showLogin();
+                    }
+                } else {
+                    localStorage.removeItem('authToken');
+                    showLogin();
+                }
+            } catch (error) {
+                console.error('Token verification failed:', error);
+                localStorage.removeItem('authToken');
+                showLogin();
+            }
+        }
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const messageDiv = document.getElementById('loginMessage');
+
+            // Show loading state
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+            messageDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Store token
+                    localStorage.setItem('authToken', result.data.token);
+                    
+                    // Show success message
+                    showMessage('Login successful!', 'success');
+                    
+                    // Show dashboard after short delay
+                    setTimeout(() => {
+                        showDashboard(result.data.user);
+                        loadDashboardStats();
+                    }, 1000);
+                } else {
+                    showMessage(result.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showMessage('Login failed. Please try again.', 'error');
+            } finally {
+                // Reset button state
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
+        }
+
+        // Show dashboard
+        function showDashboard(user) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            
+            // Update user info
+            const userName = document.getElementById('userName');
+            if (user.profile) {
+                userName.textContent = `Welcome, ${user.profile.first_name} ${user.profile.last_name}!`;
+            } else {
+                userName.textContent = `Welcome, ${user.email}!`;
+            }
+        }
+
+        // Show login
+        function showLogin() {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('dashboardSection').style.display = 'none';
+        }
+
+        // Load dashboard statistics
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/statistics`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayStats(result.data);
+                } else {
+                    document.getElementById('statsGrid').innerHTML = '<div class="loading">Failed to load statistics</div>';
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('statsGrid').innerHTML = '<div class="loading">Error loading statistics</div>';
+            }
+        }
+
+        // Display statistics
+        function displayStats(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.totalUsers || 0}</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.totalPlaces || 0}</div>
+                    <div class="stat-label">Total Places</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.todaysBookings || 0}</div>
+                    <div class="stat-label">Today's Bookings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.todaysVisitors || 0}</div>
+                    <div class="stat-label">Today's Visitors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.assignedPasses || 0}</div>
+                    <div class="stat-label">Assigned Passes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.overduePasses || 0}</div>
+                    <div class="stat-label">Overdue Passes</div>
+                </div>
+            `;
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('loginMessage');
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('authToken');
+            showLogin();
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginMessage').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+

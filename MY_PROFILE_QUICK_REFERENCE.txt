@@ -1,0 +1,275 @@
+================================================================================
+                    👤 MY PROFILE API - QUICK REFERENCE
+================================================================================
+
+BASE URL: http://localhost:3000/api/my-profile
+AUTHENTICATION: JWT Token (Authorization: Bearer <token>)
+ACCESS: Any authenticated user (self-service only)
+
+================================================================================
+                              📋 API ENDPOINTS
+================================================================================
+
+1. GET /api/my-profile
+   ├─ Description: Get my profile information
+   ├─ Headers: Authorization: Bearer <JWT_TOKEN>
+   └─ Returns: Complete profile data
+
+2. PUT /api/my-profile
+   ├─ Description: Update my profile
+   ├─ Headers: Authorization: Bearer <JWT_TOKEN>
+   ├─ Body: { first_name, last_name, phone, address, city, state, country, etc. }
+   └─ Returns: Success message
+
+3. PUT /api/my-profile/email
+   ├─ Description: Update my email address
+   ├─ Headers: Authorization: Bearer <JWT_TOKEN>
+   ├─ Body: { "email": "newemail@example.com" }
+   └─ Note: Email will need re-verification
+
+4. POST /api/my-profile/request-password-reset
+   ├─ Description: Request password reset email
+   ├─ Headers: Authorization: Bearer <JWT_TOKEN>
+   └─ Returns: Confirmation that email was sent
+
+5. POST /api/my-profile/change-password
+   ├─ Description: Change password (requires old password)
+   ├─ Headers: Authorization: Bearer <JWT_TOKEN>
+   ├─ Body: { "oldPassword": "...", "newPassword": "..." }
+   └─ Returns: Success message
+
+================================================================================
+                          🚀 QUICK START EXAMPLES
+================================================================================
+
+1. GET MY PROFILE
+   ─────────────────────────────────────────────────────────────────────────
+   curl -X GET "http://localhost:3000/api/my-profile" \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+2. UPDATE MY NAME
+   ─────────────────────────────────────────────────────────────────────────
+   curl -X PUT "http://localhost:3000/api/my-profile" \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"first_name":"Jane","last_name":"Smith"}'
+
+3. UPDATE MY PHONE
+   ─────────────────────────────────────────────────────────────────────────
+   curl -X PUT "http://localhost:3000/api/my-profile" \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"phone":"+1234567890"}'
+
+4. CHANGE MY EMAIL
+   ─────────────────────────────────────────────────────────────────────────
+   curl -X PUT "http://localhost:3000/api/my-profile/email" \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"newemail@example.com"}'
+
+5. REQUEST PASSWORD RESET
+   ─────────────────────────────────────────────────────────────────────────
+   curl -X POST "http://localhost:3000/api/my-profile/request-password-reset" \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+6. CHANGE PASSWORD
+   ─────────────────────────────────────────────────────────────────────────
+   curl -X POST "http://localhost:3000/api/my-profile/change-password" \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"oldPassword":"OldPass123","newPassword":"NewPass456"}'
+
+================================================================================
+                        💻 JAVASCRIPT FETCH EXAMPLES
+================================================================================
+
+const token = localStorage.getItem('jwt_token');
+const API = 'http://localhost:3000/api/my-profile';
+
+// Get Profile
+const profile = await fetch(API, {
+  headers: { 'Authorization': `Bearer ${token}` }
+}).then(r => r.json());
+
+// Update Profile
+await fetch(API, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    first_name: 'Jane',
+    last_name: 'Smith',
+    phone: '+1234567890'
+  })
+}).then(r => r.json());
+
+// Update Email
+await fetch(`${API}/email`, {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ email: 'newemail@example.com' })
+}).then(r => r.json());
+
+// Request Password Reset
+await fetch(`${API}/request-password-reset`, {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${token}` }
+}).then(r => r.json());
+
+// Change Password
+await fetch(`${API}/change-password`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    oldPassword: 'OldPass123',
+    newPassword: 'NewPass456'
+  })
+}).then(r => r.json());
+
+================================================================================
+                        📝 UPDATABLE PROFILE FIELDS
+================================================================================
+
+Personal Information:
+  ├─ first_name          (string)
+  ├─ last_name           (string)
+  ├─ phone               (string)
+  └─ date_of_birth       (date: YYYY-MM-DD)
+
+Address:
+  ├─ address             (string)
+  ├─ city                (string)
+  ├─ state               (string)
+  ├─ country             (string)
+  └─ postal_code         (string)
+
+Additional:
+  ├─ avatar_url          (string: URL)
+  ├─ bio                 (text)
+  └─ website             (string: URL)
+
+================================================================================
+                          🔒 SECURITY FEATURES
+================================================================================
+
+✅ Self-Service Only
+   └─ Users can ONLY access their own profile
+   └─ User ID is extracted from JWT token
+   └─ Cannot view or modify other users' data
+
+✅ Authentication Required
+   └─ All endpoints require valid JWT token
+   └─ Token must be active and not expired
+
+✅ Email Update Security
+   └─ Checks for duplicate emails
+   └─ Marks email as unverified after change
+
+✅ Password Change Security
+   └─ Requires current password verification
+   └─ New password is hashed with bcrypt
+
+✅ Password Reset Security
+   └─ Generates secure random token
+   └─ Token expires in 1 hour
+   └─ Sent to user's registered email
+
+================================================================================
+                          📊 RESPONSE STATUS CODES
+================================================================================
+
+200 - Success
+400 - Bad Request (invalid data, wrong password)
+401 - Unauthorized (no token or invalid token)
+404 - Profile not found
+500 - Server error
+
+================================================================================
+                          🆚 MY PROFILE VS USER MANAGEMENT
+================================================================================
+
+MY PROFILE (/api/my-profile)
+  ├─ Any authenticated user can access
+  ├─ Users can only view/edit THEIR OWN profile
+  ├─ Self-service profile management
+  └─ No admin privileges required
+
+USER MANAGEMENT (/api/user-management)
+  ├─ Admin only
+  ├─ Admin can view/edit ANY user's profile
+  ├─ Admin can activate/deactivate users
+  └─ Admin can delete users
+
+================================================================================
+                          🎯 COMMON USE CASES
+================================================================================
+
+1. User wants to update their name
+   └─ PUT /api/my-profile
+      Body: { "first_name": "Jane", "last_name": "Smith" }
+
+2. User wants to update contact info
+   └─ PUT /api/my-profile
+      Body: { "phone": "+1234567890", "address": "123 Main St" }
+
+3. User forgot password
+   └─ POST /api/my-profile/request-password-reset
+      → Receives email with reset link
+      → Clicks link and enters new password
+
+4. User wants to change password (knows old password)
+   └─ POST /api/my-profile/change-password
+      Body: { "oldPassword": "old", "newPassword": "new" }
+
+5. User wants to change email
+   └─ PUT /api/my-profile/email
+      Body: { "email": "newemail@example.com" }
+      → Email will need re-verification
+
+================================================================================
+                          ✅ TESTING CHECKLIST
+================================================================================
+
+□ Login to get JWT token
+□ View my profile (GET /api/my-profile)
+□ Update my name
+□ Update my phone
+□ Update my address
+□ Change my email
+□ Request password reset
+□ Receive email with reset link
+□ Change password with old password
+□ Verify cannot access other users' profiles
+
+================================================================================
+                          📚 DOCUMENTATION FILES
+================================================================================
+
+MY_PROFILE_API_DOCUMENTATION.md    - Complete API documentation
+MY_PROFILE_USAGE_GUIDE.md          - Step-by-step usage guide
+MY_PROFILE_QUICK_REFERENCE.txt     - This quick reference
+
+================================================================================
+                          🎉 READY TO USE!
+================================================================================
+
+Server: http://localhost:3000
+Base URL: http://localhost:3000/api/my-profile
+Authentication: JWT Token (any role)
+Access: Self-service only
+
+All My Profile APIs are production-ready! 👤✨
+
+================================================================================
+
+
+

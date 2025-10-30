@@ -1,0 +1,284 @@
+================================================================================
+                   📊 DASHBOARD API - QUICK REFERENCE
+================================================================================
+
+BASE URL: http://localhost:3000/api/dashboard
+AUTHENTICATION: JWT Token (Authorization: Bearer <token>)
+
+================================================================================
+                         📋 ALL 10 ENDPOINTS
+================================================================================
+
+1. GET /statistics
+   └─ Overview statistics (users, bookings, visitors, places)
+   └─ Access: Admin, Manager
+
+2. GET /recent-activity?limit=20
+   └─ Recent system activities (bookings, check-ins, alerts)
+   └─ Access: Admin, Manager
+
+3. GET /todays-schedule
+   └─ Today's bookings with status
+   └─ Access: All roles
+
+4. GET /bookings-analytics?period=week
+   └─ Booking trends and analytics
+   └─ Access: Admin, Manager
+
+5. GET /visitors-analytics?period=month
+   └─ Visitor statistics and trends
+   └─ Access: Admin, Manager
+
+6. GET /places-utilization?date=2025-10-09
+   └─ Place usage and availability
+   └─ Access: All roles
+
+7. GET /pass-statistics
+   └─ Pass management statistics
+   └─ Access: Admin, Manager, Reception
+
+8. GET /alerts?severity=all
+   └─ System alerts and warnings
+   └─ Access: Admin, Manager
+
+9. GET /performance
+   └─ System performance metrics
+   └─ Access: Admin only
+
+10. GET /top-statistics?limit=10
+    └─ Top performers and rankings
+    └─ Access: Admin, Manager
+
+================================================================================
+                         💻 QUICK USAGE
+================================================================================
+
+const token = localStorage.getItem('authToken')
+const API = 'http://localhost:3000/api/dashboard'
+
+// Get statistics
+const stats = await fetch(`${API}/statistics`, {
+  headers: { 'Authorization': `Bearer ${token}` }
+}).then(r => r.json())
+
+// Get recent activity
+const activity = await fetch(`${API}/recent-activity?limit=20`, {
+  headers: { 'Authorization': `Bearer ${token}` }
+}).then(r => r.json())
+
+// Get today's schedule
+const schedule = await fetch(`${API}/todays-schedule`, {
+  headers: { 'Authorization': `Bearer ${token}` }
+}).then(r => r.json())
+
+// Get alerts
+const alerts = await fetch(`${API}/alerts?severity=high`, {
+  headers: { 'Authorization': `Bearer ${token}` }
+}).then(r => r.json())
+
+================================================================================
+                         📊 STATISTICS OVERVIEW
+================================================================================
+
+Returns:
+  ├─ totalUsers (total registered users)
+  ├─ activeUsers (logged in last 7 days)
+  ├─ totalPlaces (all places)
+  ├─ activePlaces (active places)
+  ├─ todaysBookings (bookings today)
+  ├─ ongoingBookings (currently happening)
+  ├─ upcomingBookings (scheduled for later today)
+  ├─ todaysVisitors (visitors today)
+  ├─ checkedInVisitors (visitors with passes)
+  └─ expectedVisitors (not yet checked in)
+
+Trends:
+  ├─ usersGrowth (% change from last week)
+  ├─ bookingsGrowth (% change)
+  ├─ visitorsGrowth (% change)
+  └─ placesUtilization (% of places active)
+
+================================================================================
+                         📝 RECENT ACTIVITY TYPES
+================================================================================
+
+Activity Types:
+  ├─ booking_created (new booking made)
+  ├─ visitor_checkin (visitor checked in with pass)
+  ├─ user_registered (new user account)
+  ├─ capacity_alert (room capacity exceeded)
+  └─ pass_overdue (pass not returned on time)
+
+Each Activity Has:
+  ├─ id (unique identifier)
+  ├─ type (activity type)
+  ├─ title (short description)
+  ├─ description (detailed info)
+  ├─ user (who performed action)
+  ├─ timestamp (when it happened)
+  ├─ relativeTime ("5 min ago")
+  ├─ urgent (true/false)
+  └─ metadata (additional data)
+
+================================================================================
+                         📅 TODAY'S SCHEDULE
+================================================================================
+
+Returns:
+  ├─ schedule[] (array of today's bookings)
+  │   ├─ id, title, place_name
+  │   ├─ start_time, end_time
+  │   ├─ status (completed, ongoing, upcoming, cancelled)
+  │   ├─ responsible_person
+  │   ├─ participants_count
+  │   ├─ external_visitors_count
+  │   ├─ has_refreshments
+  │   └─ color (status color)
+  └─ summary
+      ├─ total, completed, ongoing
+      ├─ upcoming, cancelled
+
+================================================================================
+                         📈 BOOKINGS ANALYTICS
+================================================================================
+
+Query Parameters:
+  └─ period: 'today' | 'week' | 'month' | 'year'
+
+Returns:
+  ├─ summary (totals, averages, peaks)
+  ├─ byStatus (breakdown by status)
+  ├─ byPlace (bookings per place)
+  ├─ byTimeSlot (bookings by hour)
+  └─ dailyTrend (daily booking counts)
+
+================================================================================
+                         👥 VISITORS ANALYTICS
+================================================================================
+
+Query Parameters:
+  └─ period: 'week' | 'month' | 'year'
+
+Returns:
+  ├─ summary (total, unique, repeat, averages)
+  ├─ byCompany (top visitor companies)
+  ├─ byReferenceType (NIC, Passport, etc.)
+  ├─ frequentVisitors (top 10 visitors)
+  └─ dailyTrend (daily visitor counts)
+
+================================================================================
+                         🏢 PLACES UTILIZATION
+================================================================================
+
+Query Parameters:
+  └─ date: 'YYYY-MM-DD' (default: today)
+
+Returns:
+  ├─ summary (totals, averages, most/least booked)
+  ├─ places[] (each place with utilization)
+  │   ├─ place_id, place_name, capacity
+  │   ├─ todaysBookings, totalHoursBooked
+  │   ├─ utilizationRate (%)
+  │   └─ currentStatus (occupied/available)
+  └─ utilizationByHour (hourly breakdown)
+
+================================================================================
+                         🎫 PASS STATISTICS
+================================================================================
+
+Returns:
+  ├─ summary
+  │   ├─ totalPasses, assignedPasses, availablePasses
+  │   ├─ overduePasses
+  │   ├─ todaysAssignments, todaysReturns
+  ├─ byType[] (breakdown by pass type)
+  │   ├─ pass_type_id, pass_type_name
+  │   ├─ total, assigned, available
+  │   └─ utilization (%)
+  └─ recentAssignments[] (last 10 assignments)
+
+================================================================================
+                         ⚠️ SYSTEM ALERTS
+================================================================================
+
+Query Parameters:
+  └─ severity: 'all' | 'high' | 'medium' | 'low'
+
+Alert Types:
+  ├─ capacity_exceeded (room over capacity)
+  ├─ overdue_pass (pass not returned)
+  ├─ blacklisted_visitor (scheduled visit)
+  └─ system_performance (performance issues)
+
+Returns:
+  ├─ alerts[] (list of alerts)
+  │   ├─ id, type, severity
+  │   ├─ title, message
+  │   ├─ timestamp, resolved
+  │   └─ metadata (additional info)
+  └─ summary (counts by severity)
+
+================================================================================
+                         ⚡ PERFORMANCE METRICS
+================================================================================
+
+Returns:
+  ├─ system
+  │   ├─ serverLoad (% CPU/memory)
+  │   ├─ databaseUsage (MB)
+  │   ├─ storageUsage (MB)
+  │   ├─ apiResponseTime (ms)
+  │   ├─ uptime (hours)
+  │   └─ lastRestart (timestamp)
+  ├─ database
+  │   ├─ totalRecords (per table)
+  │   └─ recentGrowth (new records)
+  └─ api
+      ├─ totalRequests (24h)
+      ├─ successRate (%)
+      ├─ averageResponseTime (ms)
+      ├─ slowestEndpoint
+      └─ mostUsedEndpoint
+
+================================================================================
+                         🏆 TOP STATISTICS
+================================================================================
+
+Query Parameters:
+  └─ limit: number (default: 10)
+
+Returns:
+  ├─ topBookers[] (users with most bookings)
+  ├─ topPlaces[] (most booked places)
+  ├─ topVisitorCompanies[] (companies with most visits)
+  └─ mostActiveHours[] (busiest time slots)
+
+================================================================================
+                         🔄 AUTO-REFRESH INTERVALS
+================================================================================
+
+Recommended refresh rates:
+  ├─ Statistics: 60 seconds
+  ├─ Recent Activity: 30 seconds
+  ├─ Today's Schedule: 60 seconds
+  ├─ Alerts: 30 seconds
+  ├─ Performance: 120 seconds
+  └─ Analytics: 300 seconds (5 minutes)
+
+================================================================================
+                         ✅ ALL APIS READY
+================================================================================
+
+✅ 10 Dashboard APIs created
+✅ Real-time data from database
+✅ Role-based access control
+✅ Complete documentation
+✅ Frontend examples included
+✅ Production-ready
+
+Server: http://localhost:3000
+Base URL: http://localhost:3000/api/dashboard
+
+================================================================================
+
+

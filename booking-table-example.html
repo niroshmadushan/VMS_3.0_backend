@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Management Table</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #e8f4f8;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-upcoming {
+            background-color: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #c6c8ca;
+        }
+        
+        .status-in-progress {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #a3e4a3;
+        }
+        
+        .status-cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-completed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status-confirmed {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .btn-attendance {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .btn-attendance:hover:not(:disabled) {
+            background-color: #138496;
+            transform: translateY(-1px);
+        }
+        
+        .btn-attendance:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn-cancel {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-cancel:hover:not(:disabled) {
+            background-color: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        .btn-cancel:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .btn-edit {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        
+        .btn-view {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-view:hover {
+            background-color: #1e7e34;
+            transform: translateY(-1px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .refresh-btn {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn:hover {
+            background-color: #138496;
+        }
+
+        .cancel-icon {
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 0;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 8px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Booking Management</h1>
+            <p>Manage your bookings with cancel functionality</p>
+        </div>
+        
+        <div class="content">
+            <button class="refresh-btn" onclick="loadBookings()">🔄 Refresh Bookings</button>
+            
+            <div id="loading" class="loading" style="display: none;">
+                <div>⏳ Loading bookings...</div>
+            </div>
+            
+            <div id="error" class="error" style="display: none;"></div>
+            <div id="success" class="success" style="display: none;"></div>
+            
+            <table id="bookings-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Location</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="bookings-tbody">
+                </tbody>
+            </table>
+
+            <div id="no-bookings" style="display: none; text-align: center; padding: 40px; color: #666;">
+                <div>📅 No bookings found</div>
+                <p>Create some bookings to see them here!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ REPLACE WITH YOUR ACTUAL JWT TOKEN
+        const JWT_TOKEN = 'your-jwt-token-here';
+        const API_BASE_URL = 'http://localhost:3000';
+
+        // Load bookings when page loads
+        document.addEventListener('DOMContentLoaded', loadBookings);
+
+        async function loadBookings() {
+            showLoading(true);
+            hideMessages();
+
+            try {
+                // Try to get bookings from secure select API
+                const response = await fetch(`${API_BASE_URL}/api/secure-select/bookings`, {
+                    headers: {
+                        'Authorization': `Bearer ${JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayBookingsTable(data.data);
+                } else {
+                    // If no bookings table exists, show sample data
+                    showSampleData();
+                }
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                // Show sample data if API fails
+                showSampleData();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showSampleData() {
+            // Sample bookings data for demonstration
+            const sampleBookings = [
+                {
+                    id: '1',
+                    title: 'Conference Room Booking',
+                    status: 'pending',
+                    start_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now
+                    end_time: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(), // 4 hours from now
+                    location: 'Conference Room A'
+                },
+                {
+                    id: '2',
+                    title: 'Meeting Room Reservation',
+                    status: 'upcoming',
+                    start_time: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(), // 6 hours from now
+                    end_time: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(), // 8 hours from now
+                    location: 'Meeting Room 2'
+                },
+                {
+                    id: '3',
+                    title: 'Training Session',
+                    status: 'in_progress',
+                    start_time: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+                    end_time: new Date(Date.now() + 90 * 60 * 1000).toISOString(), // 90 minutes from now
+                    location: 'Training Hall'
+                },
+                {
+                    id: '4',
+                    title: 'Client Presentation',
+                    status: 'cancelled',
+                    start_time: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+                    end_time: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
+                    location: 'Presentation Room'
+                },
+                {
+                    id: '5',
+                    title: 'Team Workshop',
+                    status: 'completed',
+                    start_time: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+                    end_time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+                    location: 'Workshop Room'
+                }
+            ];
+
+            displayBookingsTable(sampleBookings);
+        }
+
+        function displayBookingsTable(bookings) {
+            const tbody = document.getElementById('bookings-tbody');
+            const table = document.getElementById('bookings-table');
+            const noBookings = document.getElementById('no-bookings');
+            
+            if (bookings.length === 0) {
+                table.style.display = 'none';
+                noBookings.style.display = 'block';
+                return;
+            }
+
+            tbody.innerHTML = bookings.map(booking => `
+                <tr>
+                    <td><strong>${booking.title || 'Untitled Booking'}</strong></td>
+                    <td>
+                        <span class="status-badge status-${booking.status}">
+                            ${booking.status}
+                        </span>
+                    </td>
+                    <td>${formatDateTime(booking.start_time)}</td>
+                    <td>${formatDateTime(booking.end_time)}</td>
+                    <td>${booking.location || 'TBD'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            ${getActionButtons(booking)}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            table.style.display = 'table';
+            noBookings.style.display = 'none';
+        }
+
+        function getActionButtons(booking) {
+            const buttons = [];
+            
+            // View button (always available)
+            buttons.push(`
+                <button class="btn btn-view" onclick="viewBooking('${booking.id}')">
+                    👁️ View
+                </button>
+            `);
+            
+            // Edit button (available for non-cancelled bookings)
+            if (booking.status !== 'cancelled') {
+                buttons.push(`
+                    <button class="btn btn-edit" onclick="editBooking('${booking.id}')">
+                        ✏️ Edit
+                    </button>
+                `);
+            }
+            
+            // Mark Attendance button (for pending, confirmed, upcoming, in_progress bookings)
+            if (['pending', 'confirmed', 'upcoming', 'in_progress'].includes(booking.status)) {
+                buttons.push(`
+                    <button class="btn btn-attendance" onclick="markAttendance('${booking.id}', '${booking.title}')">
+                        <span class="attendance-icon">📝</span> Mark Attendance
+                    </button>
+                `);
+            }
+            
+            // Cancel button (only for pending, upcoming, in_progress)
+            if (['pending', 'upcoming', 'in_progress'].includes(booking.status)) {
+                buttons.push(`
+                    <button class="btn btn-cancel" onclick="cancelBooking('${booking.id}', '${booking.title}')">
+                        <span class="cancel-icon">🗑️</span> Cancel
+                    </button>
+                `);
+            } else if (booking.status === 'cancelled') {
+                buttons.push(`
+                    <button class="btn btn-cancel" disabled>
+                        ❌ Cancelled
+                    </button>
+                `);
+            } else if (booking.status === 'completed') {
+                buttons.push(`
+                    <button class="btn btn-cancel" disabled>
+                        ✅ Completed
+                    </button>
+                `);
+            }
+            
+            return buttons.join('');
+        }
+
+        async function markAttendance(bookingId, bookingTitle) {
+            if (!confirm(`Are you sure you want to mark attendance for "${bookingTitle}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/bookings/${bookingId}/mark-attendance`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Attendance marked successfully!');
+                    loadBookings(); // Refresh the table
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error marking attendance:', error);
+                alert('Failed to mark attendance. Please try again.');
+            }
+        }
+
+        async function cancelBooking(bookingId, bookingTitle) {
+            if (!confirm(`Are you sure you want to cancel the booking "${bookingTitle}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Booking cancelled successfully!');
+                    loadBookings(); // Refresh the table
+                } else {
+                    showError('Failed to cancel booking: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error cancelling booking:', error);
+                // For demo purposes, simulate success
+                showSuccess(`Booking "${bookingTitle}" cancelled successfully! (Demo)`);
+                loadBookings(); // Refresh the table
+            }
+        }
+
+        function viewBooking(bookingId) {
+            alert(`👁️ View booking: ${bookingId}\n\nThis would open a detailed view of the booking.`);
+        }
+
+        function editBooking(bookingId) {
+            alert(`✏️ Edit booking: ${bookingId}\n\nThis would open an edit form for the booking.`);
+        }
+
+        function formatDateTime(dateString) {
+            if (!dateString) return 'TBD';
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => hideMessages(), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            setTimeout(() => hideMessages(), 3000);
+        }
+
+        function hideMessages() {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+
+
+

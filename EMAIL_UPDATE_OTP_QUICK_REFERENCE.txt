@@ -1,0 +1,253 @@
+================================================================================
+           📧 EMAIL UPDATE WITH OTP - QUICK REFERENCE
+================================================================================
+
+BASE URL: http://localhost:3000/api/my-profile
+AUTHENTICATION: JWT Token (Authorization: Bearer <token>)
+
+================================================================================
+                         🔄 COMPLETE FLOW
+================================================================================
+
+Step 1: User enters new email
+   ↓
+Step 2: PUT /api/my-profile/email → Sends 6-digit OTP to new email
+   ↓
+Step 3: User receives OTP in email (expires in 10 minutes)
+   ↓
+Step 4: User enters email + OTP in frontend
+   ↓
+Step 5: POST /api/my-profile/verify-email-otp → Verifies and updates email
+   ↓
+Step 6: Email updated and verified ✅
+
+================================================================================
+                         📋 API ENDPOINTS
+================================================================================
+
+1. SEND OTP TO NEW EMAIL
+   ─────────────────────────────────────────────────────────────────────────
+   Method: PUT
+   URL: http://localhost:3000/api/my-profile/email
+   
+   Headers:
+   {
+     "Content-Type": "application/json",
+     "Authorization": "Bearer YOUR_JWT_TOKEN"
+   }
+   
+   Body:
+   {
+     "email": "newemail@example.com"
+   }
+   
+   Response:
+   {
+     "success": true,
+     "message": "OTP sent to your new email address...",
+     "data": {
+       "email": "newemail@example.com"
+     }
+   }
+
+2. VERIFY OTP AND UPDATE EMAIL
+   ─────────────────────────────────────────────────────────────────────────
+   Method: POST
+   URL: http://localhost:3000/api/my-profile/verify-email-otp
+   
+   Headers:
+   {
+     "Content-Type": "application/json",
+     "Authorization": "Bearer YOUR_JWT_TOKEN"
+   }
+   
+   Body:
+   {
+     "email": "newemail@example.com",
+     "otpCode": "123456"
+   }
+   
+   Response:
+   {
+     "success": true,
+     "message": "Email updated and verified successfully!"
+   }
+
+================================================================================
+                         💻 JAVASCRIPT EXAMPLES
+================================================================================
+
+// Step 1: Send OTP
+const token = localStorage.getItem('authToken')
+
+const sendOTP = await fetch('http://localhost:3000/api/my-profile/email', {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({ email: 'newemail@example.com' })
+}).then(r => r.json())
+
+console.log(sendOTP.message) // OTP sent...
+
+// Step 2: Verify OTP (after user enters OTP)
+const verifyOTP = await fetch('http://localhost:3000/api/my-profile/verify-email-otp', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    email: 'newemail@example.com',
+    otpCode: '123456'
+  })
+}).then(r => r.json())
+
+console.log(verifyOTP.message) // Email updated and verified!
+
+================================================================================
+                         ⏰ OTP DETAILS
+================================================================================
+
+Format:     6 digits (e.g., 123456)
+Expiry:     10 minutes
+Type:       email_verification
+Single Use: Yes (cannot reuse same OTP)
+Storage:    Database table: otp_codes
+
+================================================================================
+                         📧 EMAIL CONTENT
+================================================================================
+
+Subject: Verify Your New Email Address
+
+Content:
+  - Greeting with user's name
+  - 6-digit code in blue box
+  - Expiry warning (10 minutes)
+  - Instructions to enter code
+  - Security notice
+
+================================================================================
+                         ❌ ERROR RESPONSES
+================================================================================
+
+1. Email Already Exists
+   {
+     "success": false,
+     "message": "Email already exists"
+   }
+
+2. Invalid/Expired OTP
+   {
+     "success": false,
+     "message": "Invalid or expired OTP code"
+   }
+
+3. Unauthorized
+   {
+     "success": false,
+     "message": "Invalid token"
+   }
+
+4. Missing Fields
+   {
+     "success": false,
+     "message": "Email and OTP code are required"
+   }
+
+================================================================================
+                         ✅ SUCCESS CHECKLIST
+================================================================================
+
+Before calling APIs:
+□ User is logged in (have JWT token)
+□ JWT token is stored in localStorage
+□ Token is not expired
+
+For Send OTP API:
+□ Include Authorization header with JWT
+□ Include email in request body
+□ Email format is valid
+
+For Verify OTP API:
+□ Include Authorization header with JWT
+□ Include both email and otpCode in body
+□ OTP is 6 digits
+□ OTP was entered within 10 minutes
+
+================================================================================
+                         🎯 FRONTEND REQUIREMENTS
+================================================================================
+
+1. Email Input Form
+   - Input field for new email
+   - Validation for email format
+   - Button to send OTP
+
+2. OTP Input Form
+   - Display which email OTP was sent to
+   - Input field for 6-digit code
+   - Verify button
+   - Resend OTP button
+   - Cancel button
+
+3. Success/Error Messages
+   - Show OTP sent confirmation
+   - Show verification success
+   - Show error messages clearly
+
+4. Loading States
+   - Disable buttons while processing
+   - Show loading indicators
+
+================================================================================
+                         🔐 SECURITY FEATURES
+================================================================================
+
+✅ JWT authentication required for both APIs
+✅ OTP expires after 10 minutes
+✅ OTP is single-use (marked as used after verification)
+✅ Email duplicate check before sending OTP
+✅ Email duplicate check before updating
+✅ OTP stored securely in database
+✅ Email marked as verified after successful OTP verification
+
+================================================================================
+                         📝 IMPORTANT NOTES
+================================================================================
+
+1. Email is NOT updated when OTP is sent
+   - Email only updates after successful OTP verification
+
+2. OTP is sent to the NEW email address
+   - User must have access to the new email to receive OTP
+
+3. OTP expires in 10 minutes
+   - User can request a new OTP if expired
+
+4. Each OTP can only be used once
+   - After verification, OTP is marked as used
+
+5. User can cancel the process
+   - Email remains unchanged if OTP is not verified
+
+================================================================================
+                         🎉 READY TO USE!
+================================================================================
+
+Server: http://localhost:3000
+APIs:
+  1. PUT /api/my-profile/email (Send OTP)
+  2. POST /api/my-profile/verify-email-otp (Verify OTP)
+
+Authentication: JWT Token required for both APIs
+OTP Format: 6 digits, expires in 10 minutes
+
+✅ Both APIs are tested and working!
+✅ OTP-based email verification is production-ready!
+
+================================================================================
+
+
