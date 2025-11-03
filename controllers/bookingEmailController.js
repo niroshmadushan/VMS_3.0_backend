@@ -679,3 +679,4 @@ module.exports = {
     getBookingParticipants,
     getBookingEmailHistory
 };
+

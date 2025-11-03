@@ -60,3 +60,4 @@ CREATE TABLE IF NOT EXISTS bookings (
     INDEX idx_start_time (start_time)
 ) ENGINE=InnoDB;
 
+

@@ -70,3 +70,4 @@ async function testDirectEmail() {
 
 // Run the test
 testDirectEmail();
+

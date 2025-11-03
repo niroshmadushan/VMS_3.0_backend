@@ -79,3 +79,4 @@ CREATE TABLE IF NOT EXISTS places (
     FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_name (name)
 ) ENGINE=InnoDB;
+

@@ -32,7 +32,7 @@ const signupValidation = [
         .withMessage('Last name must be between 2 and 50 characters'),
     body('role')
         .optional()
-        .isIn(['admin', 'user', 'moderator'])
+        .isIn(['admin', 'user', 'moderator', 'staff', 'assistant'])
         .withMessage('Invalid role specified')
 ];
 
@@ -121,6 +121,7 @@ const signup = async (req, res) => {
             data: {
                 userId: result.data,
                 email: email,
+                role: role,
                 verificationRequired: true
             }
         });
