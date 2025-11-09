@@ -5,7 +5,9 @@ const {
     sendBookingDetailsEmail,
     sendBookingReminderEmail,
     getBookingParticipants,
-    getBookingEmailHistory
+    getBookingEmailHistory,
+    sendBookingEmailFromFrontend,
+    downloadCalendarFile
 } = require('../controllers/bookingEmailController');
 
 // All routes require authentication
@@ -43,6 +45,38 @@ router.post('/:bookingId/send-reminder', sendBookingReminderEmail);
  * @access Private (authenticated users)
  */
 router.get('/:bookingId/history', getBookingEmailHistory);
+
+/**
+ * @route POST /api/booking-email/send-from-frontend
+ * @desc Send booking email with all data from frontend (no database queries)
+ * @access Private (authenticated users)
+ * @body {string} meetingName - Meeting/booking name
+ * @body {string} date - Booking date (YYYY-MM-DD)
+ * @body {string} startTime - Start time (HH:MM:SS or HH:MM)
+ * @body {string} endTime - End time (HH:MM:SS or HH:MM)
+ * @body {string} place - Place/location name
+ * @body {string} description - Booking description (optional)
+ * @body {Array} participantEmails - Array of email addresses to send to
+ * @body {string} emailType - Type of email (booking_details, booking_confirmation) - optional
+ * @body {string} customMessage - Custom message to include - optional
+ * @body {boolean} includeCalendar - Include calendar file attachment (default: true)
+ * @body {string} calendarFormat - Calendar file format: 'ics' or 'csv' (default: 'ics')
+ */
+router.post('/send-from-frontend', sendBookingEmailFromFrontend);
+
+/**
+ * @route POST /api/booking-email/download-calendar
+ * @desc Download calendar file (ICS or CSV) for a booking
+ * @access Private (authenticated users)
+ * @body {string} meetingName - Meeting/booking name
+ * @body {string} date - Booking date (YYYY-MM-DD)
+ * @body {string} startTime - Start time (HH:MM:SS or HH:MM)
+ * @body {string} endTime - End time (HH:MM:SS or HH:MM)
+ * @body {string} place - Place/location name (optional)
+ * @body {string} description - Booking description (optional)
+ * @body {string} format - File format: 'ics' or 'csv' (default: 'ics')
+ */
+router.post('/download-calendar', downloadCalendarFile);
 
 module.exports = router;
 

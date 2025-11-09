@@ -281,7 +281,9 @@ const login = async (req, res) => {
         if (!user.is_email_verified) {
             return res.status(403).json({
                 success: false,
-                message: 'Please verify your email address before logging in'
+                message: 'Please verify your email address before logging in',
+                canResendVerification: true,
+                email: email
             });
         }
 
@@ -423,10 +425,98 @@ const verifyOTP = async (req, res) => {
     }
 };
 
+// Resend verification email controller
+const resendVerificationEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email address is required'
+            });
+        }
+
+        // Find user by email
+        const userQuery = `
+            SELECT u.id, u.email, u.is_email_verified, u.email_verification_token, u.email_verification_expires, p.first_name
+            FROM users u
+            LEFT JOIN profiles p ON u.id = p.user_id
+            WHERE u.email = ?
+        `;
+        const userResult = await getOne(userQuery, [email]);
+
+        if (!userResult.success || !userResult.data) {
+            // Don't reveal if email exists or not for security
+            return res.status(200).json({
+                success: true,
+                message: 'If the email exists and is not verified, a verification link has been sent'
+            });
+        }
+
+        const user = userResult.data;
+
+        // If already verified, return success message
+        if (user.is_email_verified) {
+            return res.status(200).json({
+                success: true,
+                message: 'Email is already verified. You can proceed to login.'
+            });
+        }
+
+        // Generate new verification token if token is expired or doesn't exist
+        let verificationToken = user.email_verification_token;
+        let verificationExpires = user.email_verification_expires;
+
+        if (!verificationToken || !verificationExpires || new Date() > new Date(verificationExpires)) {
+            verificationToken = uuidv4();
+            verificationExpires = new Date();
+            verificationExpires.setHours(verificationExpires.getHours() + 24); // 24 hours
+
+            // Update user with new token
+            await executeQuery(
+                'UPDATE users SET email_verification_token = ?, email_verification_expires = ? WHERE id = ?',
+                [verificationToken, verificationExpires, user.id]
+            );
+        }
+
+        // Send verification email
+        const emailResult = await emailService.sendVerificationEmail(
+            user.email,
+            user.first_name || 'User',
+            verificationToken
+        );
+
+        if (!emailResult.success) {
+            console.error('Failed to send verification email:', emailResult.error);
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to send verification email. Please try again later.'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Verification email sent successfully. Please check your inbox.',
+            data: {
+                email: user.email
+            }
+        });
+
+    } catch (error) {
+        console.error('Resend verification email error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
 module.exports = {
     signup,
     verifyEmail,
     login,
     verifyOTP,
+    resendVerificationEmail,
     signupValidation
 };

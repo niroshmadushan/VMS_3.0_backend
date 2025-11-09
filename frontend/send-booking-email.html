@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Booking Email</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .email-list {
+            min-height: 120px;
+            font-family: monospace;
+        }
+        
+        .required {
+            color: #e74c3c;
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        
+        .result h3 {
+            margin-bottom: 10px;
+        }
+        
+        .result pre {
+            margin-top: 10px;
+            font-size: 12px;
+            overflow-x: auto;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        details {
+            margin-top: 10px;
+        }
+        
+        summary {
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            flex: 1;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-download:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Send Booking Email</h1>
+        <p class="subtitle">Send meeting details via email to participants</p>
+        
+        <form id="bookingEmailForm">
+            <!-- Meeting Name -->
+            <div class="form-group">
+                <label for="meetingName">Meeting Name <span class="required">*</span></label>
+                <input 
+                    type="text" 
+                    id="meetingName" 
+                    name="meetingName" 
+                    placeholder="e.g., Team Meeting, Client Presentation"
+                    required
+                >
+            </div>
+            
+            <!-- Date -->
+            <div class="form-group">
+                <label for="date">Date <span class="required">*</span></label>
+                <input 
+                    type="date" 
+                    id="date" 
+                    name="date" 
+                    required
+                >
+                <div class="help-text">Format: YYYY-MM-DD</div>
+            </div>
+            
+            <!-- Start Time -->
+            <div class="form-group">
+                <label for="startTime">Start Time <span class="required">*</span></label>
+                <input 
+                    type="time" 
+                    id="startTime" 
+                    name="startTime" 
+                    step="1"
+                    required
+                >
+                <div class="help-text">Format: HH:MM:SS or HH:MM</div>
+            </div>
+            
+            <!-- End Time -->
+            <div class="form-group">
+                <label for="endTime">End Time <span class="required">*</span></label>
+                <input 
+                    type="time" 
+                    id="endTime" 
+                    name="endTime" 
+                    step="1"
+                    required
+                >
+                <div class="help-text">Format: HH:MM:SS or HH:MM</div>
+            </div>
+            
+            <!-- Place -->
+            <div class="form-group">
+                <label for="place">Place/Location</label>
+                <input 
+                    type="text" 
+                    id="place" 
+                    name="place" 
+                    placeholder="e.g., Conference Room A, Main Office Building"
+                >
+            </div>
+            
+            <!-- Description -->
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea 
+                    id="description" 
+                    name="description" 
+                    placeholder="Meeting description, agenda, or additional details..."
+                ></textarea>
+            </div>
+            
+            <!-- Participant Emails -->
+            <div class="form-group">
+                <label for="participantEmails">Participant Emails <span class="required">*</span></label>
+                <textarea 
+                    id="participantEmails" 
+                    name="participantEmails" 
+                    class="email-list"
+                    placeholder="Enter email addresses, one per line:&#10;john@example.com&#10;jane@example.com&#10;bob@example.com"
+                    required
+                ></textarea>
+                <div class="help-text">Enter one email address per line. All emails will receive the booking details.</div>
+            </div>
+            
+            <!-- Custom Message -->
+            <div class="form-group">
+                <label for="customMessage">Custom Message</label>
+                <textarea 
+                    id="customMessage" 
+                    name="customMessage" 
+                    placeholder="Additional message for participants (optional)..."
+                ></textarea>
+            </div>
+            
+            <!-- Email Type -->
+            <div class="form-group">
+                <label for="emailType">Email Type</label>
+                <select id="emailType" name="emailType">
+                    <option value="booking_details">Booking Details</option>
+                    <option value="booking_confirmation">Booking Confirmation</option>
+                </select>
+            </div>
+            
+            <!-- Calendar Options -->
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="includeCalendar" checked>
+                    Include calendar file in email (ICS format)
+                </label>
+                <div class="help-text">Participants can add the event to their calendar directly from the email</div>
+            </div>
+            
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn">📤 Send Email</button>
+            
+            <!-- Calendar Download Buttons -->
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="button" id="downloadICS" class="btn-download">📅 Download ICS</button>
+                <button type="button" id="downloadCSV" class="btn-download">📊 Download CSV</button>
+            </div>
+        </form>
+        
+        <!-- Result Message -->
+        <div id="result" class="result"></div>
+    </div>
+    
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        // Change this to your backend URL
+        const API_BASE_URL = 'http://localhost:3000';
+        const LOGIN_PAGE = 'index.html'; // Change to your login page
+        
+        // ============================================
+        // AUTHENTICATION FUNCTIONS
+        // ============================================
+        
+        // Get JWT token from storage
+        function getAuthToken() {
+            return localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+        }
+        
+        // Check if user is logged in
+        function checkAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                alert('❌ Please login first!\n\nYou will be redirected to the login page.');
+                window.location.href = LOGIN_PAGE;
+                return false;
+            }
+            return true;
+        }
+        
+        // ============================================
+        // FORM HANDLING
+        // ============================================
+        
+        // Format time (convert "10:00" to "10:00:00" if needed)
+        function formatTime(time) {
+            if (!time) return time;
+            const parts = time.split(':');
+            if (parts.length === 2) {
+                return time + ':00';
+            }
+            return time;
+        }
+        
+        // Parse participant emails from textarea
+        function parseEmails(emailText) {
+            return emailText
+                .split('\n')
+                .map(email => email.trim())
+                .filter(email => email && email.includes('@'));
+        }
+        
+        // Validate email format
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        // Handle form submission
+        document.getElementById('bookingEmailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Check authentication
+            if (!checkAuth()) {
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const resultDiv = document.getElementById('result');
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Sending...';
+            resultDiv.style.display = 'none';
+            
+            try {
+                // Get form values
+                const meetingName = document.getElementById('meetingName').value.trim();
+                const date = document.getElementById('date').value;
+                const startTime = formatTime(document.getElementById('startTime').value);
+                const endTime = formatTime(document.getElementById('endTime').value);
+                const place = document.getElementById('place').value.trim();
+                const description = document.getElementById('description').value.trim();
+                const participantEmailsText = document.getElementById('participantEmails').value;
+                const emailType = document.getElementById('emailType').value;
+                const customMessage = document.getElementById('customMessage').value.trim();
+                
+                // Parse emails
+                const participantEmails = parseEmails(participantEmailsText);
+                
+                // Validate required fields
+                if (!meetingName) {
+                    throw new Error('Meeting name is required');
+                }
+                if (!date) {
+                    throw new Error('Date is required');
+                }
+                if (!startTime || !endTime) {
+                    throw new Error('Start time and end time are required');
+                }
+                if (participantEmails.length === 0) {
+                    throw new Error('At least one participant email is required');
+                }
+                
+                // Validate email formats
+                const invalidEmails = participantEmails.filter(email => !isValidEmail(email));
+                if (invalidEmails.length > 0) {
+                    throw new Error(`Invalid email format: ${invalidEmails.join(', ')}`);
+                }
+                
+                // Prepare request data
+                const includeCalendar = document.getElementById('includeCalendar').checked;
+                
+                const requestData = {
+                    meetingName: meetingName,
+                    date: date,
+                    startTime: formatTime(startTime),
+                    endTime: formatTime(endTime),
+                    place: place || undefined,
+                    description: description || undefined,
+                    participantEmails: participantEmails,
+                    emailType: emailType,
+                    customMessage: customMessage || undefined,
+                    includeCalendar: includeCalendar,
+                    calendarFormat: 'ics' // ICS format for emails
+                };
+                
+                console.log('📤 Sending request:', requestData);
+                
+                // Send request to API
+                const response = await fetch(`${API_BASE_URL}/api/booking-email/send-from-frontend`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                // Handle 401 Unauthorized
+                if (response.status === 401) {
+                    alert('❌ Your session has expired.\n\nPlease login again.');
+                    localStorage.removeItem('jwt_token');
+                    sessionStorage.removeItem('jwt_token');
+                    window.location.href = LOGIN_PAGE;
+                    return;
+                }
+                
+                const result = await response.json();
+                console.log('📥 Response:', result);
+                
+                // Display result
+                if (result.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p><strong>Emails Sent:</strong> ${result.data.emailsSent} / ${result.data.totalParticipants}</p>
+                        <p><strong>Emails Failed:</strong> ${result.data.emailsFailed}</p>
+                        ${result.data.results && result.data.results.some(r => !r.success) ? `
+                            <details style="margin-top: 10px;">
+                                <summary>⚠️ View Failed Emails</summary>
+                                <ul style="margin-top: 10px; margin-left: 20px;">
+                                    ${result.data.results.filter(r => !r.success).map(r => 
+                                        `<li>${r.participantEmail}: ${r.message}</li>`
+                                    ).join('')}
+                                </ul>
+                            </details>
+                        ` : ''}
+                        ${result.data.results && result.data.results.length > 0 ? `
+                            <details style="margin-top: 10px;">
+                                <summary>📋 View All Results</summary>
+                                <pre>${JSON.stringify(result.data.results, null, 2)}</pre>
+                            </details>
+                        ` : ''}
+                    `;
+                    resultDiv.style.display = 'block';
+                    
+                    // Reset form on success (optional)
+                    // document.getElementById('bookingEmailForm').reset();
+                    // document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                    
+                } else {
+                    throw new Error(result.message || 'Failed to send emails');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p><strong>Message:</strong> ${error.message}</p>
+                    <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                        Please check your console for more details.
+                    </p>
+                `;
+                resultDiv.style.display = 'block';
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📤 Send Email';
+            }
+        });
+        
+        // ============================================
+        // PAGE INITIALIZATION
+        // ============================================
+        
+        // ============================================
+        // CALENDAR DOWNLOAD FUNCTIONS
+        // ============================================
+        
+        async function downloadCalendar(format) {
+            if (!checkAuth()) {
+                return;
+            }
+            
+            // Get form values
+            const meetingName = document.getElementById('meetingName').value.trim();
+            const date = document.getElementById('date').value;
+            const startTime = formatTime(document.getElementById('startTime').value);
+            const endTime = formatTime(document.getElementById('endTime').value);
+            const place = document.getElementById('place').value.trim();
+            const description = document.getElementById('description').value.trim();
+            
+            // Validate required fields
+            if (!meetingName || !date || !startTime || !endTime) {
+                alert('Please fill in all required fields (Meeting Name, Date, Start Time, End Time)');
+                return;
+            }
+            
+            const downloadBtn = format === 'ics' ? document.getElementById('downloadICS') : document.getElementById('downloadCSV');
+            const originalText = downloadBtn.textContent;
+            
+            try {
+                downloadBtn.disabled = true;
+                downloadBtn.textContent = '⏳ Downloading...';
+                
+                const response = await fetch(`${API_BASE_URL}/api/booking-email/download-calendar`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        meetingName: meetingName,
+                        date: date,
+                        startTime: startTime,
+                        endTime: endTime,
+                        place: place,
+                        description: description,
+                        format: format
+                    })
+                });
+                
+                if (response.status === 401) {
+                    alert('❌ Your session has expired.\n\nPlease login again.');
+                    localStorage.removeItem('jwt_token');
+                    sessionStorage.removeItem('jwt_token');
+                    window.location.href = LOGIN_PAGE;
+                    return;
+                }
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to download calendar file');
+                }
+                
+                // Get filename from Content-Disposition header or generate one
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `${meetingName.replace(/[^a-z0-9]/gi, '_')}_${date}.${format}`;
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                
+                // Download the file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                console.log(`✅ Calendar file downloaded: ${filename}`);
+                
+            } catch (error) {
+                console.error('Error downloading calendar:', error);
+                alert(`❌ Error: ${error.message}`);
+            } finally {
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = originalText;
+            }
+        }
+        
+        // Set default date to today
+        window.addEventListener('load', () => {
+            // Check authentication
+            if (!checkAuth()) {
+                return;
+            }
+            
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            
+            // Set default times
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('startTime').value = `${hours}:${minutes}`;
+            
+            // Set end time to 1 hour later
+            const endTime = new Date(now.getTime() + 60 * 60 * 1000);
+            const endHours = String(endTime.getHours()).padStart(2, '0');
+            const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+            document.getElementById('endTime').value = `${endHours}:${endMinutes}`;
+            
+            // Add event listeners for calendar download buttons
+            document.getElementById('downloadICS').addEventListener('click', () => downloadCalendar('ics'));
+            document.getElementById('downloadCSV').addEventListener('click', () => downloadCalendar('csv'));
+            
+            console.log('✅ Page loaded. Ready to send emails and download calendar files!');
+        });
+    </script>
+</body>
+</html>
+

@@ -28,6 +28,12 @@ router.post('/verify-email',
     authController.verifyEmail
 );
 
+// Resend verification email
+router.post('/resend-verification', 
+    authRateLimit,
+    authController.resendVerificationEmail
+);
+
 // Login route
 router.post('/login', 
     validateAppCredentials,

@@ -5,7 +5,7 @@ const permissions = {
         admin: [
             'users', 'profiles', 'userprofile', 'user_sessions', 'otp_codes', 'login_attempts',
             'api_usage', 'system_settings', 'places', 'products', 'orders', 'bookings',
-            'booking_history', 'booking_participants', 'booking_refreshments', 'external_participants',
+            'booking_history', 'booking_participants', 'booking_refreshments', 'booking_cancellations', 'external_participants',
             'meetings', 'meeting_participants', 'meeting_history', 'external_members',
             'pass_assignments', 'passes', 'pass_types',
             'categories', 'inventory', 'transactions', 'logs', 'audit_trail',
@@ -28,7 +28,7 @@ const permissions = {
         ],
         staff: [
             'users', 'profiles', 'userprofile', 'places', 'products', 'orders', 'bookings', 'booking_history', 
-            'booking_participants', 'booking_refreshments', 'external_participants', 
+            'booking_participants', 'booking_refreshments', 'booking_cancellations', 'external_participants', 
             'meetings', 'meeting_participants', 'meeting_history', 'external_members',
             'categories', 'inventory', 'customers', 'projects',
             // Place Management System Tables - Read Only
@@ -46,7 +46,7 @@ const permissions = {
             'place_statistics', 'active_places', 'todays_visits'
         ],
         user: [
-            'places', 'products', 'categories'
+            'places', 'products', 'categories', 'booking_cancellations'
         ],
         visitor: [
             'places', 'bookings', 'booking_history', 'booking_participants', 'products', 'categories'
@@ -72,6 +72,7 @@ const permissions = {
             booking_history: ['*'], // All columns
             booking_participants: ['*'], // All columns
             booking_refreshments: ['*'], // All columns
+            booking_cancellations: ['*'], // All columns
             external_participants: ['*'], // All columns
             meetings: ['*'], // All columns - supports upcoming, in_progress, cancelled
             meeting_participants: ['*'], // All columns
@@ -110,6 +111,7 @@ const permissions = {
             booking_history: ['*'], // All columns
             booking_participants: ['*'], // All columns
             booking_refreshments: ['*'], // All columns
+            booking_cancellations: ['*'], // All columns
             external_participants: ['*'], // All columns
             meetings: ['*'], // All columns - supports upcoming, in_progress, cancelled
             meeting_participants: ['*'], // All columns
@@ -144,6 +146,7 @@ const permissions = {
             booking_history: ['*'], // All columns
             booking_participants: ['*'], // All columns
             booking_refreshments: ['*'], // All columns
+            booking_cancellations: ['*'], // All columns
             external_participants: ['*'], // All columns
             meetings: ['*'], // All columns - supports upcoming, in_progress, cancelled
             meeting_participants: ['*'], // All columns
@@ -176,6 +179,7 @@ const permissions = {
             booking_history: ['*'], // ✅ FULL SELECT ACCESS
             booking_participants: ['*'], // ✅ FULL SELECT ACCESS
             booking_refreshments: ['*'], // ✅ FULL SELECT ACCESS
+            booking_cancellations: ['*'], // ✅ FULL SELECT ACCESS - All columns
             external_participants: ['*'], // ✅ FULL SELECT ACCESS
             meetings: ['*'], // ✅ FULL SELECT ACCESS - supports upcoming, in_progress, cancelled
             meeting_participants: ['*'], // ✅ FULL SELECT ACCESS
@@ -206,6 +210,7 @@ const permissions = {
             booking_history: ['*'], // All columns
             booking_participants: ['*'], // All columns
             booking_refreshments: ['*'], // All columns
+            booking_cancellations: ['*'], // All columns
             external_participants: ['*'], // All columns
             meetings: ['*'], // All columns - supports upcoming, in_progress, cancelled
             meeting_participants: ['*'], // All columns
@@ -228,7 +233,8 @@ const permissions = {
             profiles: ['first_name', 'last_name'],
             places: ['id', 'name', 'description', 'location', 'rating', 'price_range'],
             products: ['id', 'name', 'description', 'price', 'category_id', 'image_url'],
-            categories: ['id', 'name', 'description', 'image_url']
+            categories: ['id', 'name', 'description', 'image_url'],
+            booking_cancellations: ['*'] // All columns
         },
         visitor: {
             places: ['id', 'name', 'description', 'location', 'capacity', 'status'],
@@ -265,6 +271,7 @@ const permissions = {
             booking_history: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
             booking_participants: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
             booking_refreshments: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
+            booking_cancellations: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
             external_participants: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
             meetings: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS - supports upcoming, in_progress, cancelled
             meeting_participants: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
@@ -369,6 +376,7 @@ const permissions = {
             booking_history: ['read'], // ✅ FULL SELECT ACCESS
             booking_participants: ['create', 'read', 'update'], // ✅ INSERT ALLOWED
             booking_refreshments: ['create', 'read', 'update'], // ✅ INSERT ALLOWED
+            booking_cancellations: ['create', 'read', 'update'], // ✅ INSERT + UPDATE ACCESS
             external_participants: ['create', 'read', 'update'], // ✅ INSERT ALLOWED
             meetings: ['create', 'read', 'update'], // ✅ INSERT ALLOWED - supports upcoming, in_progress, cancelled
             meeting_participants: ['create', 'read', 'update'], // ✅ INSERT ALLOWED
@@ -420,7 +428,8 @@ const permissions = {
             profiles: ['read'],
             places: ['read'],
             products: ['read'],
-            categories: ['read']
+            categories: ['read'],
+            booking_cancellations: ['create', 'read'] // Users can create and read booking cancellations
         },
         visitor: {
             places: ['read'],

@@ -29,14 +29,15 @@ class EmailService {
         }
     }
 
-    async sendEmail(to, subject, html, text = '') {
+    async sendEmail(to, subject, html, text = '', attachments = []) {
         try {
             const mailOptions = {
                 from: config.email.from,
                 to: to,
                 subject: subject,
                 html: html,
-                text: text
+                text: text,
+                attachments: attachments || []
             };
 
             const result = await this.transporter.sendMail(mailOptions);
@@ -284,7 +285,13 @@ const emailService = new EmailService();
 
 module.exports = {
     transporter: emailService.transporter,
-    sendEmail: (emailData) => emailService.sendEmail(emailData.to, emailData.subject, emailData.html, emailData.text),
+    sendEmail: (emailData) => emailService.sendEmail(
+        emailData.to, 
+        emailData.subject, 
+        emailData.html, 
+        emailData.text || '', 
+        emailData.attachments || []
+    ),
     sendVerificationEmail: (email, firstName, verificationToken) => emailService.sendVerificationEmail(email, firstName, verificationToken),
     sendPasswordResetEmail: (email, firstName, resetToken) => emailService.sendPasswordResetEmail(email, firstName, resetToken),
     sendEmailVerificationOTP: (email, firstName, otpCode) => emailService.sendEmailVerificationOTP(email, firstName, otpCode),

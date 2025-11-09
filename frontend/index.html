@@ -126,6 +126,40 @@
             border: 1px solid #f5c6cb;
         }
 
+        .resend-verification {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .resend-verification p {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .btn-resend {
+            background: #ffc107;
+            color: #856404;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn-resend:hover {
+            background: #ffb300;
+        }
+
+        .btn-resend:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
         .dashboard {
             display: none;
             background: rgba(255, 255, 255, 0.95);
@@ -281,6 +315,10 @@
                 </div>
                 <button type="submit" class="btn" id="loginBtn">Login</button>
                 <div id="loginMessage" class="message" style="display: none;"></div>
+                <div id="resendVerification" class="resend-verification" style="display: none;">
+                    <p id="resendMessage">Your email address is not verified.</p>
+                    <button class="btn-resend" id="resendBtn" onclick="resendVerificationEmail()">Resend Verification Email</button>
+                </div>
             </form>
         </div>
 
@@ -409,19 +447,34 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    // Store token
-                    localStorage.setItem('authToken', result.data.token);
+                    // Hide resend verification section
+                    document.getElementById('resendVerification').style.display = 'none';
                     
-                    // Show success message
-                    showMessage('Login successful!', 'success');
-                    
-                    // Show dashboard after short delay
-                    setTimeout(() => {
-                        showDashboard(result.data.user);
-                        loadDashboardStats();
-                    }, 1000);
+                    // Store token if available
+                    if (result.data && result.data.token) {
+                        localStorage.setItem('authToken', result.data.token);
+                        
+                        // Show success message
+                        showMessage('Login successful!', 'success');
+                        
+                        // Show dashboard after short delay
+                        setTimeout(() => {
+                            if (result.data.user) {
+                                showDashboard(result.data.user);
+                                loadDashboardStats();
+                            }
+                        }, 1000);
+                    } else {
+                        // OTP required - show message
+                        showMessage(result.message || 'Verification code sent to your email', 'success');
+                    }
                 } else {
-                    showMessage(result.message || 'Login failed', 'error');
+                    // Check if email verification is required
+                    if (result.canResendVerification) {
+                        showResendVerification(result.email, result.message);
+                    } else {
+                        showMessage(result.message || 'Login failed', 'error');
+                    }
                 }
             } catch (error) {
                 console.error('Login error:', error);
@@ -430,6 +483,68 @@
                 // Reset button state
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login';
+            }
+        }
+
+        // Show resend verification option
+        function showResendVerification(email, message) {
+            const resendDiv = document.getElementById('resendVerification');
+            const resendMessage = document.getElementById('resendMessage');
+            const loginMessage = document.getElementById('loginMessage');
+            
+            resendMessage.textContent = message || 'Your email address is not verified.';
+            resendDiv.style.display = 'block';
+            loginMessage.style.display = 'block';
+            loginMessage.className = 'message error';
+            loginMessage.textContent = message || 'Please verify your email address before logging in.';
+            
+            // Store email for resend function
+            resendDiv.dataset.email = email;
+        }
+
+        // Resend verification email
+        async function resendVerificationEmail() {
+            const resendDiv = document.getElementById('resendVerification');
+            const resendBtn = document.getElementById('resendBtn');
+            const email = resendDiv.dataset.email || document.getElementById('email').value;
+            
+            if (!email) {
+                showMessage('Email address is required', 'error');
+                return;
+            }
+
+            // Disable button and show loading
+            resendBtn.disabled = true;
+            resendBtn.textContent = 'Sending...';
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/resend-verification`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(result.message || 'Verification email sent successfully. Please check your inbox.', 'success');
+                    resendBtn.textContent = 'Email Sent!';
+                    setTimeout(() => {
+                        resendBtn.disabled = false;
+                        resendBtn.textContent = 'Resend Verification Email';
+                    }, 3000);
+                } else {
+                    showMessage(result.message || 'Failed to send verification email', 'error');
+                    resendBtn.disabled = false;
+                    resendBtn.textContent = 'Resend Verification Email';
+                }
+            } catch (error) {
+                console.error('Resend verification error:', error);
+                showMessage('Failed to send verification email. Please try again.', 'error');
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Resend Verification Email';
             }
         }
 
@@ -522,6 +637,7 @@
             showLogin();
             document.getElementById('loginForm').reset();
             document.getElementById('loginMessage').style.display = 'none';
+            document.getElementById('resendVerification').style.display = 'none';
         }
     </script>
 </body>

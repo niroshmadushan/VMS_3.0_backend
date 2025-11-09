@@ -388,6 +388,28 @@
         let currentBooking = null;
         let currentParticipants = [];
 
+        // Helper function to get authentication token
+        function getAuthToken() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                alert('Please login first. Redirecting to login page...');
+                window.location.href = 'index.html';
+                return null;
+            }
+            return token;
+        }
+
+        // Helper function to get auth headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            if (!token) return null;
+            
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthStatus();
@@ -395,11 +417,31 @@
         });
 
         // Check authentication
-        function checkAuthStatus() {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
+        async function checkAuthStatus() {
+            const token = getAuthToken();
+            if (!token) return;
+
+            // Verify token is still valid
+            try {
+                const response = await fetch(`${API_BASE}/auth/validate-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                if (!result.success || !result.valid) {
+                    alert('Your session has expired. Please login again.');
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error('Token validation error:', error);
+                alert('Error validating token. Please login again.');
+                localStorage.removeItem('authToken');
                 window.location.href = 'index.html';
-                return;
             }
         }
 
@@ -429,15 +471,22 @@
                 return;
             }
 
+            const headers = getAuthHeaders();
+            if (!headers) return;
+
             try {
                 showLoading('participantsGrid');
                 
                 const response = await fetch(`${API_BASE}/booking-email/${bookingId}/participants`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-                        'Content-Type': 'application/json'
-                    }
+                    headers: headers
                 });
+
+                if (response.status === 401) {
+                    alert('Your session has expired. Please login again.');
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'index.html';
+                    return;
+                }
 
                 const result = await response.json();
 
@@ -540,16 +589,16 @@
                 return;
             }
 
+            const headers = getAuthHeaders();
+            if (!headers) return;
+
             const emailType = document.getElementById('emailType').value;
             const customMessage = document.getElementById('customMessage').value;
 
             try {
                 const response = await fetch(`${API_BASE}/booking-email/${currentBooking.id}/send-details`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-                        'Content-Type': 'application/json'
-                    },
+                    headers: headers,
                     body: JSON.stringify({
                         participantIds: selectedParticipants,
                         emailType: emailType,
@@ -557,17 +606,26 @@
                     })
                 });
 
+                if (response.status === 401) {
+                    alert('Your session has expired. Please login again.');
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
                     displayResults(result.data);
-                    alert(`Emails sent successfully! ${result.data.emailsSent} sent, ${result.data.emailsFailed} failed.`);
+                    alert(`Emails sent successfully! ${result.data.emailsSent} sent, ${result.data.emailsFailed || 0} failed.`);
                 } else {
-                    alert('Failed to send emails: ' + result.message);
+                    const errorMsg = result.error ? `${result.message}: ${result.error}` : result.message;
+                    console.error('Email sending failed:', result);
+                    alert('Failed to send emails: ' + errorMsg);
                 }
             } catch (error) {
                 console.error('Error sending emails:', error);
-                alert('Failed to send emails');
+                alert('Failed to send emails: ' + error.message);
             }
         }
 
@@ -579,6 +637,9 @@
                 return;
             }
 
+            const headers = getAuthHeaders();
+            if (!headers) return;
+
             const reminderType = prompt('Enter reminder type (24_hours or 1_hour):', '24_hours');
             if (!reminderType) return;
 
@@ -587,15 +648,19 @@
             try {
                 const response = await fetch(`${API_BASE}/booking-email/${currentBooking.id}/send-reminder`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-                        'Content-Type': 'application/json'
-                    },
+                    headers: headers,
                     body: JSON.stringify({
                         reminderType: reminderType,
                         customMessage: customMessage
                     })
                 });
+
+                if (response.status === 401) {
+                    alert('Your session has expired. Please login again.');
+                    localStorage.removeItem('authToken');
+                    window.location.href = 'index.html';
+                    return;
+                }
 
                 const result = await response.json();
 
