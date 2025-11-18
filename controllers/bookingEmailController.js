@@ -877,6 +877,19 @@ const sendBookingDetailsEmail = async (req, res) => {
                 console.log('==========================================');
                 console.log('');
                 
+                // Validate email service before sending
+                if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+                    const errorMsg = 'Email service not configured. Please set SMTP_USER and SMTP_PASS in config.env';
+                    console.error(`   ❌ FAILED: ${errorMsg}`);
+                    return {
+                        participantId: participant.id,
+                        participantName: participant.full_name,
+                        participantEmail: participant.email,
+                        success: false,
+                        message: errorMsg
+                    };
+                }
+
                 // Send email
                 const emailResult = await sendEmail({
                     to: participant.email,
@@ -886,9 +899,13 @@ const sendBookingDetailsEmail = async (req, res) => {
                 });
 
                 if (emailResult.success) {
-                    console.log(`   ✅ SUCCESS: Email sent to ${participant.email}`);
+                    console.log(`   ✅ SUCCESS: Email sent to ${participant.email} (Message ID: ${emailResult.messageId || 'N/A'})`);
                 } else {
-                    console.log(`   ❌ FAILED: ${emailResult.error || 'Unknown error'}`);
+                    console.error(`   ❌ FAILED: ${emailResult.error || 'Unknown error'}`);
+                    // Log more details for debugging
+                    if (emailResult.error) {
+                        console.error(`      Error details:`, emailResult.error);
+                    }
                 }
 
                 return {
@@ -896,7 +913,10 @@ const sendBookingDetailsEmail = async (req, res) => {
                     participantName: participant.full_name,
                     participantEmail: participant.email,
                     success: emailResult.success,
-                    message: emailResult.message || 'Email sent successfully'
+                    message: emailResult.success 
+                        ? 'Email sent successfully' 
+                        : (emailResult.error || 'Failed to send email'),
+                    error: emailResult.success ? undefined : (emailResult.error || 'Unknown error')
                 };
             } catch (error) {
                 console.error(`   ❌ ERROR sending email to ${participant.email}:`, error.message);
@@ -936,17 +956,28 @@ const sendBookingDetailsEmail = async (req, res) => {
         console.log('==========================================');
         console.log('');
 
+        // Prepare detailed response with error information
+        const failedEmails = results.filter(r => !r.success).map(r => ({
+            participant: r.participantName,
+            email: r.participantEmail,
+            error: r.error || r.message
+        }));
+
         res.json({
-            success: true,
-            message: `Email sending completed. ${successCount} successful, ${failureCount} failed.`,
+            success: failureCount === 0, // Only true if all emails sent successfully
+            message: failureCount === 0 
+                ? `All emails sent successfully to ${successCount} participant(s)` 
+                : `Email sending completed. ${successCount} successful, ${failureCount} failed.`,
             data: {
                 bookingId,
                 bookingTitle: booking.title,
                 totalParticipants: participants.length,
                 emailsSent: successCount,
                 emailsFailed: failureCount,
-                results: results
-            }
+                results: results,
+                failedEmails: failedEmails.length > 0 ? failedEmails : undefined
+            },
+            error: failureCount > 0 ? `Failed to send ${failureCount} email(s). Check server logs for details.` : undefined
         });
 
     } catch (error) {

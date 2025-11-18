@@ -109,14 +109,43 @@ const secureUpdate = async (req, res) => {
             });
         }
 
+        // Helper function to check if a value is a UUID
+        const isUUID = (value) => {
+            if (typeof value !== 'string') return false;
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            return uuidRegex.test(value);
+        };
+
+        // Helper function to convert ISO timestamp to MySQL format
+        const convertTimestamp = (value) => {
+            if (typeof value === 'string' && value.includes('T') && value.includes('Z')) {
+                // ISO format: 2025-11-17T07:38:18.566Z
+                return value.replace('T', ' ').replace(/\.\d{3}Z$/, '');
+            }
+            return value;
+        };
+
+        // Convert timestamp fields in filteredData
+        for (const [column, value] of Object.entries(filteredData)) {
+            if (column.includes('_at') || column.includes('_date') || column.includes('_time')) {
+                filteredData[column] = convertTimestamp(value);
+            }
+        }
+
         // Add audit fields
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         filteredData.updated_at = now;
         filteredData.updated_by = String(userId);
 
-        // Build UPDATE query
+        // Build UPDATE query with BINARY comparison for UUID columns
         const setClause = Object.keys(filteredData).map(column => `${column} = ?`).join(', ');
-        const whereClause = Object.keys(where).map(column => `${column} = ?`).join(' AND ');
+        const whereClause = Object.keys(where).map(column => {
+            // Use BINARY comparison for UUID columns (id columns)
+            if (column === 'id' || isUUID(where[column])) {
+                return `BINARY ${column} = BINARY ?`;
+            }
+            return `${column} = ?`;
+        }).join(' AND ');
         
         const updateQuery = `UPDATE ${tableName} SET ${setClause} WHERE ${whereClause}`;
         
@@ -145,7 +174,7 @@ const secureUpdate = async (req, res) => {
             // Get the updated record(s) if single record update
             let updatedRecords = null;
             if (affectedRows === 1 && where.id) {
-                const selectQuery = `SELECT * FROM ${tableName} WHERE id = ?`;
+                const selectQuery = `SELECT * FROM ${tableName} WHERE BINARY id = BINARY ?`;
                 const recordResult = await executeQuery(selectQuery, [where.id]);
                 if (recordResult.success) {
                     updatedRecords = recordResult.data;
@@ -235,6 +264,21 @@ const secureBulkUpdate = async (req, res) => {
             });
         }
 
+        // Helper functions for bulk updates
+        const isUUID = (value) => {
+            if (typeof value !== 'string') return false;
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            return uuidRegex.test(value);
+        };
+
+        const convertTimestamp = (value) => {
+            if (typeof value === 'string' && value.includes('T') && value.includes('Z')) {
+                // ISO format: 2025-11-17T07:38:18.566Z
+                return value.replace('T', ' ').replace(/\.\d{3}Z$/, '');
+            }
+            return value;
+        };
+
         // Process each update
         const processedUpdates = [];
         const errors = [];
@@ -289,6 +333,13 @@ const secureBulkUpdate = async (req, res) => {
                 continue;
             }
 
+            // Convert timestamp fields in filteredData
+            for (const [column, value] of Object.entries(filteredData)) {
+                if (column.includes('_at') || column.includes('_date') || column.includes('_time')) {
+                    filteredData[column] = convertTimestamp(value);
+                }
+            }
+
             // Add audit fields
             const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
             filteredData.updated_at = now;
@@ -322,7 +373,13 @@ const secureBulkUpdate = async (req, res) => {
             const { where, data } = update;
             
             const setClause = Object.keys(data).map(column => `${column} = ?`).join(', ');
-            const whereClause = Object.keys(where).map(column => `${column} = ?`).join(' AND ');
+            const whereClause = Object.keys(where).map(column => {
+                // Use BINARY comparison for UUID columns (id columns)
+                if (column === 'id' || isUUID(where[column])) {
+                    return `BINARY ${column} = BINARY ?`;
+                }
+                return `${column} = ?`;
+            }).join(' AND ');
             
             const updateQuery = `UPDATE ${tableName} SET ${setClause} WHERE ${whereClause}`;
             const updateValues = Object.values(data);
