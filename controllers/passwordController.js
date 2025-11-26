@@ -9,7 +9,6 @@ const { generateOTP } = require('../controllers/authController');
 const passwordResetValidation = [
     body('email')
         .isEmail()
-        .normalizeEmail()
         .withMessage('Please provide a valid email address')
 ];
 

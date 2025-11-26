@@ -15,7 +15,6 @@ const generateOTP = () => {
 const signupValidation = [
     body('email')
         .isEmail()
-        .normalizeEmail()
         .withMessage('Please provide a valid email address'),
     body('password')
         .isLength({ min: 8 })
