@@ -53,7 +53,7 @@ const permissions = {
         ],
         assistant: [
             'places', 'bookings', 'booking_history', 'booking_participants', 'booking_refreshments',
-            'external_participants', 'meetings', 'meeting_participants', 'products', 'categories'
+            'external_participants', 'external_members', 'meetings', 'meeting_participants', 'products', 'categories'
         ]
     },
 
@@ -251,6 +251,7 @@ const permissions = {
             booking_participants: ['*'], // ✅ FULL SELECT ACCESS
             booking_refreshments: ['*'], // ✅ FULL SELECT ACCESS
             external_participants: ['*'], // ✅ FULL SELECT ACCESS
+            external_members: ['*'], // ✅ FULL SELECT ACCESS - All columns
             meetings: ['*'], // ✅ FULL SELECT ACCESS
             meeting_participants: ['*'], // ✅ FULL SELECT ACCESS
             products: ['id', 'name', 'description', 'price', 'category_id'],
@@ -446,6 +447,7 @@ const permissions = {
             booking_participants: ['create', 'read', 'update'], // ✅ SELECT, INSERT, UPDATE ACCESS
             booking_refreshments: ['create', 'read', 'update'], // ✅ SELECT, INSERT, UPDATE ACCESS
             external_participants: ['create', 'read', 'update'], // ✅ SELECT, INSERT, UPDATE ACCESS
+            external_members: ['create', 'read', 'update'], // ✅ SELECT, INSERT, UPDATE ACCESS
             meetings: ['create', 'read', 'update'], // ✅ SELECT, INSERT, UPDATE ACCESS
             meeting_participants: ['create', 'read', 'update'], // ✅ SELECT, INSERT, UPDATE ACCESS
             products: ['read'],
