@@ -7,9 +7,12 @@ const permissions = {
             'api_usage', 'system_settings', 'places', 'products', 'orders', 'bookings',
             'booking_history', 'booking_participants', 'booking_refreshments', 'booking_cancellations', 'external_participants',
             'meetings', 'meeting_participants', 'meeting_history', 'external_members',
+            'external_member_visit_times', // External member visit tracking
             'pass_assignments', 'passes', 'pass_types',
+            'v_missing_booking_details', // View for missing booking details
             'categories', 'inventory', 'transactions', 'logs', 'audit_trail',
             'customers', 'suppliers', 'employees', 'departments', 'projects',
+            'refreshment_types', 'refreshment_items', // Refreshment Management System Tables
             // Place Management System Tables
             'places', 'place_configuration', 'place_deactivation_reasons', 'visitors', 'visits', 
             'visit_cancellations', 'place_access_logs', 'place_notifications', 
@@ -18,7 +21,9 @@ const permissions = {
         manager: [
             'users', 'profiles', 'places', 'products', 'orders', 'bookings', 'booking_history', 
             'booking_participants', 'booking_refreshments', 'external_participants', 
-            'meetings', 'meeting_participants', 'meeting_history', 'categories', 'inventory',
+            'meetings', 'meeting_participants', 'meeting_history', 'external_member_visit_times',
+            'v_missing_booking_details', // View for missing booking details
+            'categories', 'inventory',
             'customers', 'suppliers', 'employees', 'departments', 'projects',
             'transactions', 'logs',
             // Place Management System Tables - Read Only
@@ -30,7 +35,10 @@ const permissions = {
             'users', 'profiles', 'userprofile', 'places', 'products', 'orders', 'bookings', 'booking_history', 
             'booking_participants', 'booking_refreshments', 'booking_cancellations', 'external_participants', 
             'meetings', 'meeting_participants', 'meeting_history', 'external_members',
+            'external_member_visit_times', // External member visit tracking
+            'v_missing_booking_details', // View for missing booking details
             'categories', 'inventory', 'customers', 'projects',
+            'refreshment_types', 'refreshment_items', // Refreshment Management System Tables
             // Place Management System Tables - Read Only
             'places', 'place_configuration', 'place_deactivation_reasons', 'visitors', 'visits', 
             'visit_cancellations', 'place_access_logs', 'place_notifications', 
@@ -39,7 +47,9 @@ const permissions = {
         reception: [
             'users', 'profiles', 'places', 'products', 'bookings', 'booking_history', 
             'booking_participants', 'booking_refreshments', 'external_participants', 
-            'meetings', 'meeting_participants', 'meeting_history', 'categories',
+            'meetings', 'meeting_participants', 'meeting_history', 'external_member_visit_times',
+            'v_missing_booking_details', // View for missing booking details
+            'categories',
             // Place Management System Tables - Read Only
             'places', 'place_configuration', 'place_deactivation_reasons', 'visitors', 'visits', 
             'visit_cancellations', 'place_access_logs', 'place_notifications', 
@@ -78,6 +88,8 @@ const permissions = {
             meeting_participants: ['*'], // All columns
             meeting_history: ['*'], // All columns
             external_members: ['*'], // All columns - admin full access
+            external_member_visit_times: ['*'], // All columns - admin full access
+            v_missing_booking_details: ['*'], // All columns - view (read-only)
             pass_assignments: ['*'], // All columns
             passes: ['*'], // All columns
             pass_types: ['*'], // All columns
@@ -89,6 +101,9 @@ const permissions = {
             employees: ['*'],
             departments: ['*'],
             projects: ['*'],
+            // Refreshment Management System Tables - All columns
+            refreshment_types: ['*'], // All columns - admin full access
+            refreshment_items: ['*'], // All columns - admin full access
             // Place Management System Tables - All columns
             place_configuration: ['*'],
             place_deactivation_reasons: ['id', 'place_id', 'reason_type', 'reason_description', 'deactivated_by', 'deactivated_at', 'estimated_reactivation_date', 'contact_person', 'contact_phone', 'contact_email', 'is_resolved', 'resolved_at', 'resolved_by', 'resolution_notes'],
@@ -116,6 +131,8 @@ const permissions = {
             meetings: ['*'], // All columns - supports upcoming, in_progress, cancelled
             meeting_participants: ['*'], // All columns
             meeting_history: ['*'], // All columns
+            external_member_visit_times: ['*'], // All columns
+            v_missing_booking_details: ['*'], // All columns - view (read-only)
             categories: ['*'],
             inventory: ['*'],
             transactions: ['id', 'amount', 'type', 'status', 'created_at'],
@@ -185,10 +202,15 @@ const permissions = {
             meeting_participants: ['*'], // ✅ FULL SELECT ACCESS
             meeting_history: ['*'], // ✅ FULL SELECT ACCESS
             external_members: ['*'], // ✅ FULL SELECT ACCESS - All columns
+            external_member_visit_times: ['*'], // ✅ FULL SELECT ACCESS - All columns
+            v_missing_booking_details: ['*'], // ✅ FULL SELECT ACCESS - All columns (view)
             categories: ['*'],
             inventory: ['id', 'product_id', 'quantity', 'location'],
             customers: ['id', 'name', 'email', 'phone', 'address'],
             projects: ['id', 'name', 'status', 'start_date', 'end_date'],
+            // Refreshment Management System Tables - Full access
+            refreshment_types: ['*'], // ✅ FULL SELECT ACCESS - All columns
+            refreshment_items: ['*'], // ✅ FULL SELECT ACCESS - All columns
             // Place Management System Tables - Full access
             place_configuration: ['*'],
             place_deactivation_reasons: ['*'],
@@ -215,6 +237,8 @@ const permissions = {
             meetings: ['*'], // All columns - supports upcoming, in_progress, cancelled
             meeting_participants: ['*'], // All columns
             meeting_history: ['*'], // All columns
+            external_member_visit_times: ['*'], // All columns
+            v_missing_booking_details: ['*'], // All columns - view (read-only)
             categories: ['id', 'name', 'description'],
             // Place Management System Tables - Basic columns only
             place_configuration: ['id', 'place_id', 'config_key', 'config_value', 'is_active'],
@@ -277,7 +301,9 @@ const permissions = {
             meetings: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS - supports upcoming, in_progress, cancelled
             meeting_participants: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
             meeting_history: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
-            external_members: ['create', 'read', 'update'], // ✅ SELECT, INSERT, UPDATE ACCESS - admin only
+            external_members: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS - admin only
+            external_member_visit_times: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
+            v_missing_booking_details: ['read'], // ✅ READ ONLY - view
             pass_assignments: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
             passes: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
             pass_types: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
@@ -289,6 +315,9 @@ const permissions = {
             employees: ['read', 'update', 'delete'], // REMOVED create
             departments: ['read', 'update', 'delete'], // REMOVED create
             projects: ['read', 'update', 'delete'], // REMOVED create
+            // Refreshment Management System Tables - Full access
+            refreshment_types: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
+            refreshment_items: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
             // Place Management System Tables - INSERT ONLY for specific tables
             place_configuration: ['create', 'read', 'update', 'delete'], // ✅ INSERT ALLOWED
             place_deactivation_reasons: ['create', 'read', 'update', 'delete'], // ✅ INSERT ALLOWED
@@ -315,6 +344,8 @@ const permissions = {
             meetings: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS - supports upcoming, in_progress, cancelled
             meeting_participants: ['create', 'read', 'update'], // ✅ INSERT ALLOWED (no delete)
             meeting_history: ['read'], // Read only
+            external_member_visit_times: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
+            v_missing_booking_details: ['read'], // ✅ READ ONLY - view
             categories: ['read', 'update'], // REMOVED create
             inventory: ['read', 'update'], // REMOVED create
             transactions: ['read'],
@@ -383,10 +414,15 @@ const permissions = {
             meeting_participants: ['create', 'read', 'update'], // ✅ INSERT ALLOWED
             meeting_history: ['read'], // ✅ FULL SELECT ACCESS
             external_members: ['create', 'read', 'update'], // ✅ SELECT, INSERT, UPDATE ACCESS
+            external_member_visit_times: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
+            v_missing_booking_details: ['read'], // ✅ READ ONLY - view
             categories: ['read'],
             inventory: ['read'],
             customers: ['read'],
             projects: ['read'],
+            // Refreshment Management System Tables - Full CRUD access
+            refreshment_types: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
+            refreshment_items: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
             // Place Management System Tables - Full SELECT access
             place_configuration: ['read'],
             place_deactivation_reasons: ['read'],
@@ -412,6 +448,8 @@ const permissions = {
             meetings: ['create', 'read', 'update'], // ✅ INSERT ALLOWED (no delete) - supports upcoming, in_progress, cancelled
             meeting_participants: ['create', 'read', 'update'], // ✅ INSERT ALLOWED (no delete)
             meeting_history: ['read'], // Read only
+            external_member_visit_times: ['create', 'read', 'update'], // ✅ INSERT/UPDATE ACCESS (no delete)
+            v_missing_booking_details: ['read'], // ✅ READ ONLY - view
             categories: ['read'],
             // Place Management System Tables - Read only
             place_deactivation_reasons: ['read'],

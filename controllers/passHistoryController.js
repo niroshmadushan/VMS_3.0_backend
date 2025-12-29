@@ -142,7 +142,7 @@ const getPassHistory = async (req, res) => {
         const params = [...dateParams, parseInt(limit), offset];
         const result = await executeQuery(query, params);
 
-        // Get total count for pagination
+        // Get total count for pagination (use same params but without LIMIT/OFFSET)
         const countQuery = `
             SELECT COUNT(*) as total
             FROM pass_assignments pa
@@ -155,7 +155,9 @@ const getPassHistory = async (req, res) => {
             ${searchCondition}
         `;
 
-        const countResult = await getOne(countQuery, dateParams);
+        // Use dateParams which includes search params if search was used
+        const countParams = dateParams; // This already includes search params from line 78
+        const countResult = await getOne(countQuery, countParams);
         const total = countResult.data?.total || 0;
 
         // Get filter counts
