@@ -220,12 +220,12 @@ const getTodaysSchedule = async (req, res) => {
                 b.start_time,
                 b.end_time,
                 b.status,
-                CONCAT(pr.first_name, ' ', pr.last_name) as responsible_person,
+                CONCAT(COALESCE(pr.first_name, ''), ' ', COALESCE(pr.last_name, '')) COLLATE utf8mb4_unicode_ci as responsible_person,
                 (SELECT COUNT(*) FROM booking_participants bp WHERE bp.booking_id = b.id AND bp.is_deleted = 0) as participants_count,
                 (SELECT COUNT(*) FROM external_participants ep WHERE ep.booking_id = b.id AND ep.is_deleted = 0) as external_visitors_count,
                 (SELECT COUNT(*) > 0 FROM booking_refreshments br WHERE br.booking_id = b.id AND br.is_deleted = 0) as has_refreshments
              FROM bookings b
-             LEFT JOIN places p ON b.place_id = p.id
+             LEFT JOIN places p ON BINARY b.place_id = BINARY p.id
              LEFT JOIN users u ON b.created_by = u.id
              LEFT JOIN profiles pr ON u.id = pr.user_id
              WHERE DATE(b.booking_date) = CURDATE()

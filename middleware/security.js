@@ -158,27 +158,24 @@ const maintenanceMode = async (req, res, next) => {
     }
 };
 
-// CORS configuration
+// CORS configuration - ONLY PORT 6001 ALLOWED
 const corsOptions = {
     origin: function (origin, callback) {
         // Allow requests with no origin (mobile apps, curl, etc.)
         if (!origin) return callback(null, true);
         
+        // ONLY PORT 6001 IS ALLOWED - All other ports are blocked
         const allowedOrigins = [
-            config.app.frontendUrl,
-            'http://localhost:3000',
-            'http://localhost:3001',
-            'http://localhost:3002',
-            'http://127.0.0.1:3000',
-            'http://127.0.0.1:3001',
-            'http://127.0.0.1:3002',
-            'http://192.168.12.230:3001'
-        ];
+            'http://localhost:6001',
+            'http://127.0.0.1:6001',
+            // Check if frontend URL uses port 6001
+            config.app.frontendUrl && config.app.frontendUrl.includes(':6001') ? config.app.frontendUrl : null
+        ].filter(Boolean); // Remove null values
         
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            callback(new Error('Not allowed by CORS - Only port 6001 is permitted'));
         }
     },
     credentials: true,

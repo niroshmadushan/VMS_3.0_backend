@@ -4,7 +4,7 @@ const permissions = {
     tableAccess: {
         admin: [
             'users', 'profiles', 'userprofile', 'user_sessions', 'otp_codes', 'login_attempts',
-            'api_usage', 'system_settings', 'places', 'products', 'orders', 'bookings',
+            'api_usage', 'system_settings', 'secret_tbl', 'places', 'products', 'orders', 'bookings',
             'booking_history', 'booking_participants', 'booking_refreshments', 'booking_cancellations', 'external_participants',
             'meetings', 'meeting_participants', 'meeting_history', 'external_members',
             'external_member_visit_times', // External member visit tracking
@@ -75,6 +75,8 @@ const permissions = {
             userprofile: ['*'], // All columns
             user_sessions: ['*'],
             otp_codes: ['*'],
+            system_settings: ['*'],
+            secret_tbl: ['*'], // Secret codes table - admin full access
             places: ['*'],
             products: ['*'],
             orders: ['*'],
@@ -315,6 +317,8 @@ const permissions = {
             employees: ['read', 'update', 'delete'], // REMOVED create
             departments: ['read', 'update', 'delete'], // REMOVED create
             projects: ['read', 'update', 'delete'], // REMOVED create
+            // Secret codes management - Admin only
+            secret_tbl: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS - Secret codes management
             // Refreshment Management System Tables - Full access
             refreshment_types: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS
             refreshment_items: ['create', 'read', 'update', 'delete'], // ✅ FULL ACCESS

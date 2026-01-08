@@ -23,6 +23,13 @@ router.post('/signup',
     authController.signup
 );
 
+// Secure signup route (with secret code and domain validation)
+router.post('/secure-signup', 
+    validateAppCredentials,
+    authController.secureSignupValidation,
+    authController.secureSignup
+);
+
 // Email verification
 router.post('/verify-email', 
     authController.verifyEmail
