@@ -29,7 +29,12 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(securityHeaders);
 app.use(sanitizeInput);
+
+// CORS middleware - must be before routes
 app.use(cors(corsOptions));
+
+// Handle preflight OPTIONS requests explicitly
+app.options('*', cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

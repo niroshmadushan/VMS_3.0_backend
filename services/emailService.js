@@ -12,8 +12,9 @@ class EmailService {
                 pass: config.email.pass
             },
             tls: {
-                rejectUnauthorized: false // Allow self-signed certificates
-            }
+                rejectUnauthorized: false // Allow self-signed certificates (needed for some Office 365 configurations)
+            },
+            requireTLS: true // Require TLS for Office 365
         });
 
         // Verify connection configuration

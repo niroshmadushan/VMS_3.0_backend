@@ -68,7 +68,8 @@ const securityHeaders = helmet({
             imgSrc: ["'self'", "data:", "https:"],
         },
     },
-    crossOriginEmbedderPolicy: false
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" } // Allow cross-origin requests
 });
 
 // Request logging middleware
@@ -161,8 +162,10 @@ const maintenanceMode = async (req, res, next) => {
 // CORS configuration - ONLY https://people.cbiz365.com/ ALLOWED
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, curl, etc.)
-        if (!origin) return callback(null, true);
+        // Allow requests with no origin (mobile apps, curl, Postman, etc.)
+        if (!origin) {
+            return callback(null, true);
+        }
         
         // ONLY https://people.cbiz365.com/ IS ALLOWED - All other origins are blocked
         const allowedOrigins = [
@@ -176,14 +179,33 @@ const corsOptions = {
         const normalizedOrigin = origin.replace(/\/$/, '');
         const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ''));
         
+        // Debug logging (remove in production if needed)
+        console.log('[CORS] Request origin:', normalizedOrigin);
+        console.log('[CORS] Allowed origins:', normalizedAllowed);
+        
         if (normalizedAllowed.indexOf(normalizedOrigin) !== -1) {
+            console.log('[CORS] ✅ Origin allowed');
             callback(null, true);
         } else {
+            console.log('[CORS] ❌ Origin blocked:', normalizedOrigin);
             callback(new Error('Not allowed by CORS - Only https://people.cbiz365.com is permitted'));
         }
     },
     credentials: true,
-    optionsSuccessStatus: 200
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
+        'Origin',
+        'X-App-ID',
+        'X-Service-Key'
+    ],
+    exposedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200,
+    preflightContinue: false,
+    maxAge: 86400 // 24 hours - cache preflight requests
 };
 
 // Input sanitization middleware
