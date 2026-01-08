@@ -75,6 +75,7 @@ app.get('/verify-email', async (req, res) => {
         const { executeQuery } = require('./config/database');
         const { getOne } = require('./config/database');
         
+        // Check if user exists with this token (token is kept even after verification)
         const userQuery = `
             SELECT id, email, email_verification_expires, is_email_verified 
             FROM users 
@@ -88,24 +89,24 @@ app.get('/verify-email', async (req, res) => {
         
         const user = userResult.data;
         
-        // If already verified, redirect to frontend with success
+        // If already verified, redirect to frontend with success (include token for reference)
         if (user.is_email_verified) {
-            return res.redirect(`${frontendUrl}/verify-email?status=already_verified`);
+            return res.redirect(`${frontendUrl}/verify-email?status=already_verified&email=${encodeURIComponent(user.email)}&token=${token}`);
         }
         
-        // Check if token is expired
-        if (new Date() > new Date(user.email_verification_expires)) {
-            return res.redirect(`${frontendUrl}/verify-email?error=expired_token&token=${token}`);
+        // Check if token is expired (only if expires date exists)
+        if (user.email_verification_expires && new Date() > new Date(user.email_verification_expires)) {
+            return res.redirect(`${frontendUrl}/verify-email?error=expired_token&token=${token}&email=${encodeURIComponent(user.email)}`);
         }
         
-        // Update user as verified
+        // Update user as verified (keep token for future reference, just clear expiration)
         await executeQuery(
             'UPDATE users SET is_email_verified = 1, email_verification_expires = NULL WHERE id = ?',
             [user.id]
         );
         
-        // Redirect to frontend with success
-        return res.redirect(`${frontendUrl}/verify-email?status=success&email=${encodeURIComponent(user.email)}`);
+        // Redirect to frontend with success (include token for reference)
+        return res.redirect(`${frontendUrl}/verify-email?status=success&email=${encodeURIComponent(user.email)}&token=${token}`);
         
     } catch (error) {
         console.error('Email verification error:', error);

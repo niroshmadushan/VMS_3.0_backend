@@ -146,7 +146,7 @@ const verifyEmail = async (req, res) => {
             });
         }
 
-        // First check if user exists with this token (regardless of verification status)
+        // First check if user exists with this token (token is kept even after verification)
         const userExistsQuery = `
             SELECT id, email, email_verification_expires, is_email_verified 
             FROM users 
@@ -163,23 +163,28 @@ const verifyEmail = async (req, res) => {
 
         const { id, email, email_verification_expires, is_email_verified } = userExistsResult.data;
 
-        // If already verified, return success message
+        // If already verified, return success message (don't treat as error)
         if (is_email_verified) {
+            const frontendUrl = config.app.frontendUrl || 'https://people.cbiz365.com';
             return res.status(200).json({
                 success: true,
-                message: 'Email is already verified'
+                message: 'Email is already verified',
+                data: {
+                    email: email,
+                    redirectUrl: `${frontendUrl}/verify-email?status=already_verified&email=${encodeURIComponent(email)}`
+                }
             });
         }
 
-        // Check if token is expired
-        if (new Date() > new Date(email_verification_expires)) {
+        // Check if token is expired (only if expires date exists)
+        if (email_verification_expires && new Date() > new Date(email_verification_expires)) {
             return res.status(400).json({
                 success: false,
                 message: 'Verification token has expired'
             });
         }
 
-        // Update user as verified (keep token for reference but mark as verified)
+        // Update user as verified (keep token for future reference, just clear expiration)
         const updateQuery = `
             UPDATE users 
             SET is_email_verified = 1, email_verification_expires = NULL 
