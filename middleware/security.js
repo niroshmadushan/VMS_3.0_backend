@@ -158,24 +158,28 @@ const maintenanceMode = async (req, res, next) => {
     }
 };
 
-// CORS configuration - ONLY PORT 6001 ALLOWED
+// CORS configuration - ONLY https://people.cbiz365.com/ ALLOWED
 const corsOptions = {
     origin: function (origin, callback) {
         // Allow requests with no origin (mobile apps, curl, etc.)
         if (!origin) return callback(null, true);
         
-        // ONLY PORT 6001 IS ALLOWED - All other ports are blocked
+        // ONLY https://people.cbiz365.com/ IS ALLOWED - All other origins are blocked
         const allowedOrigins = [
-            'http://localhost:6001',
-            'http://127.0.0.1:6001',
-            // Check if frontend URL uses port 6001
-            config.app.frontendUrl && config.app.frontendUrl.includes(':6001') ? config.app.frontendUrl : null
+            'https://people.cbiz365.com',
+            'https://people.cbiz365.com/',
+            // Also allow config frontend URL if it matches
+            config.app.frontendUrl && config.app.frontendUrl.includes('people.cbiz365.com') ? config.app.frontendUrl : null
         ].filter(Boolean); // Remove null values
         
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        // Normalize origin (remove trailing slash for comparison)
+        const normalizedOrigin = origin.replace(/\/$/, '');
+        const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ''));
+        
+        if (normalizedAllowed.indexOf(normalizedOrigin) !== -1) {
             callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS - Only port 6001 is permitted'));
+            callback(new Error('Not allowed by CORS - Only https://people.cbiz365.com is permitted'));
         }
     },
     credentials: true,

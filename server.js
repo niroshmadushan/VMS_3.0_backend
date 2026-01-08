@@ -4,6 +4,7 @@ const path = require('path');
 const config = require('./config/config');
 const { testConnection } = require('./config/database');
 const { securityHeaders, requestLogger, maintenanceMode, corsOptions, sanitizeInput } = require('./middleware/security');
+const { authenticateToken } = require('./middleware/auth');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -40,6 +41,7 @@ app.use(requestLogger);
 // Maintenance mode check
 app.use(maintenanceMode);
 
+// Public routes (no authentication required)
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
@@ -68,8 +70,37 @@ app.get('/reset-password', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'reset-password.html'));
 });
 
-// API routes
+// Public API routes - Auth routes handle their own authentication
 app.use('/api/auth', authRoutes);
+
+// Global authentication middleware - Block all unauthenticated requests
+// This middleware protects all routes except public ones
+app.use((req, res, next) => {
+    // List of public routes that don't require authentication
+    const publicRoutes = [
+        '/health',
+        '/verify-email',
+        '/verify.js',
+        '/reset-password',
+        '/public'
+    ];
+    
+    // Check if the current path is a public route
+    const isPublicRoute = publicRoutes.some(route => req.path.startsWith(route));
+    
+    // Allow all /api/auth/* routes - they handle their own authentication
+    const isAuthRoute = req.path.startsWith('/api/auth');
+    
+    // Allow public routes and auth routes (auth routes have their own auth middleware)
+    if (isPublicRoute || isAuthRoute) {
+        return next();
+    }
+    
+    // Require authentication for all other routes (including root route)
+    authenticateToken(req, res, next);
+});
+
+// Protected API routes (authentication required)
 app.use('/api/admin', adminRoutes);
 app.use('/api/secure-select', secureSelectRoutes);
 app.use('/api/secure-insert', secureInsertRoutes);
@@ -82,25 +113,25 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/pass-history', passHistoryRoutes);
 app.use('/api/booking-email', bookingEmailRoutes);
 
-// Root route - API information
+// Root route - API information (protected by global auth middleware)
 app.get('/', (req, res) => {
     res.json({
         success: true,
         message: 'Authentication API Server',
         version: '1.0.0',
-                endpoints: {
-                    auth: '/api/auth',
-                    admin: '/api/admin',
-                    secureSelect: '/api/secure-select',
-                    secureInsert: '/api/secure-insert',
-                    secureUpdate: '/api/secure-update',
-                    meetings: '/api/meetings',
-                    bookings: '/api/bookings',
-                    userManagement: '/api/user-management',
-                    myProfile: '/api/my-profile',
-                    dashboard: '/api/dashboard',
-                    health: '/health'
-                },
+        endpoints: {
+            auth: '/api/auth',
+            admin: '/api/admin',
+            secureSelect: '/api/secure-select',
+            secureInsert: '/api/secure-insert',
+            secureUpdate: '/api/secure-update',
+            meetings: '/api/meetings',
+            bookings: '/api/bookings',
+            userManagement: '/api/user-management',
+            myProfile: '/api/my-profile',
+            dashboard: '/api/dashboard',
+            health: '/health'
+        },
         documentation: 'Check README.md for API documentation'
     });
 });
