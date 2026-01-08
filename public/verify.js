@@ -79,6 +79,9 @@ function verifyEmail() {
         verifyBtn.style.display = 'none';
         
         if (data.success) {
+            // Get frontend URL (default to https://people.cbiz365.com)
+            const frontendUrl = data.data?.redirectUrl || 'https://people.cbiz365.com';
+            
             // Check if this was already verified or newly verified
             if (data.message && data.message.includes('already verified')) {
                 resultDiv.innerHTML = `
@@ -86,7 +89,7 @@ function verifyEmail() {
                     <div class="message">
                         Your email address was already verified. You can now log in to your account.
                     </div>
-                    <a href="${data.data?.redirectUrl || '/'}" class="btn btn-success">Continue to Login</a>
+                    <a href="${frontendUrl}" class="btn btn-success">Continue to Login</a>
                 `;
             } else {
                 resultDiv.innerHTML = `
@@ -94,7 +97,7 @@ function verifyEmail() {
                     <div class="message">
                         Your email address has been verified. You can now log in to your account.
                     </div>
-                    <a href="${data.data?.redirectUrl || '/'}" class="btn btn-success">Continue to Login</a>
+                    <a href="${frontendUrl}" class="btn btn-success">Continue to Login</a>
                 `;
             }
         } else {

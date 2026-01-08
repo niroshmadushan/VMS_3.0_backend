@@ -171,7 +171,7 @@ const verifyEmail = async (req, res) => {
                 message: 'Email is already verified',
                 data: {
                     email: email,
-                    redirectUrl: `${frontendUrl}/verify-email?status=already_verified&email=${encodeURIComponent(email)}`
+                    redirectUrl: frontendUrl // Redirect directly to frontend login page
                 }
             });
         }
@@ -199,7 +199,7 @@ const verifyEmail = async (req, res) => {
             });
         }
 
-        // Get frontend URL for redirect
+        // Get frontend URL for redirect (go directly to frontend, not verify-email page)
         const frontendUrl = config.app.frontendUrl || 'https://people.cbiz365.com';
 
         res.json({
@@ -207,7 +207,7 @@ const verifyEmail = async (req, res) => {
             message: 'Email verified successfully',
             data: {
                 email: email,
-                redirectUrl: `${frontendUrl}/verify-email?status=success&email=${encodeURIComponent(email)}`
+                redirectUrl: frontendUrl // Redirect directly to frontend login page
             }
         });
 
