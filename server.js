@@ -60,9 +60,57 @@ app.get('/health', (req, res) => {
 // Serve static files from public directory
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
-// Serve verification page
-app.get('/verify-email', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'verify.html'));
+// Serve verification page - Handle token verification and redirect
+app.get('/verify-email', async (req, res) => {
+    const { token } = req.query;
+    const frontendUrl = config.app.frontendUrl || 'https://people.cbiz365.com';
+    
+    // If no token, redirect to frontend
+    if (!token) {
+        return res.redirect(`${frontendUrl}/verify-email?error=no_token`);
+    }
+    
+    // Verify the token via API
+    try {
+        const { executeQuery } = require('./config/database');
+        const { getOne } = require('./config/database');
+        
+        const userQuery = `
+            SELECT id, email, email_verification_expires, is_email_verified 
+            FROM users 
+            WHERE email_verification_token = ?
+        `;
+        const userResult = await getOne(userQuery, [token]);
+        
+        if (!userResult.success || !userResult.data) {
+            return res.redirect(`${frontendUrl}/verify-email?error=invalid_token`);
+        }
+        
+        const user = userResult.data;
+        
+        // If already verified, redirect to frontend with success
+        if (user.is_email_verified) {
+            return res.redirect(`${frontendUrl}/verify-email?status=already_verified`);
+        }
+        
+        // Check if token is expired
+        if (new Date() > new Date(user.email_verification_expires)) {
+            return res.redirect(`${frontendUrl}/verify-email?error=expired_token&token=${token}`);
+        }
+        
+        // Update user as verified
+        await executeQuery(
+            'UPDATE users SET is_email_verified = 1, email_verification_expires = NULL WHERE id = ?',
+            [user.id]
+        );
+        
+        // Redirect to frontend with success
+        return res.redirect(`${frontendUrl}/verify-email?status=success&email=${encodeURIComponent(user.email)}`);
+        
+    } catch (error) {
+        console.error('Email verification error:', error);
+        return res.redirect(`${frontendUrl}/verify-email?error=server_error`);
+    }
 });
 
 // Serve verification JavaScript

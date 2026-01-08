@@ -42,7 +42,8 @@ module.exports = {
     app: {
         id: process.env.APP_ID || 'default_app_id',
         serviceKey: process.env.SERVICE_KEY || 'default_service_key',
-        frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
+        frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+        backendUrl: process.env.BACKEND_URL || 'http://localhost:3000'
     },
     
     // Security configuration

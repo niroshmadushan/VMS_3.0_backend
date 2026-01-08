@@ -194,9 +194,16 @@ const verifyEmail = async (req, res) => {
             });
         }
 
+        // Get frontend URL for redirect
+        const frontendUrl = config.app.frontendUrl || 'https://people.cbiz365.com';
+
         res.json({
             success: true,
-            message: 'Email verified successfully'
+            message: 'Email verified successfully',
+            data: {
+                email: email,
+                redirectUrl: `${frontendUrl}/verify-email?status=success&email=${encodeURIComponent(email)}`
+            }
         });
 
     } catch (error) {

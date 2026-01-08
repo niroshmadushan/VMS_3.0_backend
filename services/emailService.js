@@ -77,7 +77,8 @@ class EmailService {
     }
 
     async sendVerificationEmail(email, firstName, verificationToken) {
-        const verificationUrl = `http://localhost:3000/api/auth/verify-email`;
+        const backendUrl = config.app.backendUrl || 'https://peopleapi.cbiz365.com';
+        const verificationUrl = `${backendUrl}/verify-email?token=${verificationToken}`;
         
         const html = `
             <!DOCTYPE html>
@@ -105,14 +106,14 @@ class EmailService {
                         <p>Thank you for signing up. Please verify your email address to complete your registration.</p>
                         <p>Click the button below to verify your email address:</p>
                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="http://localhost:3000/verify-email?token=${verificationToken}" style="display: inline-block; padding: 15px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,123,255,0.3); transition: all 0.3s ease;">
+                            <a href="${verificationUrl}" style="display: inline-block; padding: 15px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,123,255,0.3); transition: all 0.3s ease;">
                                 ✅ Verify Email Address
                             </a>
                         </div>
                         <p style="text-align: center; color: #666; font-size: 14px;">
                             If the button doesn't work, you can also copy this link:<br>
-                            <a href="http://localhost:3000/verify-email?token=${verificationToken}" style="color: #007bff; word-break: break-all;">
-                                http://localhost:3000/verify-email?token=${verificationToken}
+                            <a href="${verificationUrl}" style="color: #007bff; word-break: break-all;">
+                                ${verificationUrl}
                             </a>
                         </p>
                         <p style="text-align: center; color: #dc3545; font-size: 14px; margin-top: 20px;">
@@ -133,7 +134,7 @@ class EmailService {
             Thank you for signing up. Please verify your email address to complete your registration.
             
             Click this link to verify your email:
-            http://localhost:3000/verify-email?token=${verificationToken}
+            ${verificationUrl}
             
             This verification link will expire in 24 hours.
             
