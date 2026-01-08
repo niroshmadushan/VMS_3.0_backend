@@ -60,58 +60,10 @@ app.get('/health', (req, res) => {
 // Serve static files from public directory
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
-// Serve verification page - Handle token verification and redirect
-app.get('/verify-email', async (req, res) => {
-    const { token } = req.query;
-    const frontendUrl = config.app.frontendUrl || 'https://people.cbiz365.com';
-    
-    // If no token, redirect to frontend
-    if (!token) {
-        return res.redirect(`${frontendUrl}/verify-email?error=no_token`);
-    }
-    
-    // Verify the token via API
-    try {
-        const { executeQuery } = require('./config/database');
-        const { getOne } = require('./config/database');
-        
-        // Check if user exists with this token (token is kept even after verification)
-        const userQuery = `
-            SELECT id, email, email_verification_expires, is_email_verified 
-            FROM users 
-            WHERE email_verification_token = ?
-        `;
-        const userResult = await getOne(userQuery, [token]);
-        
-        if (!userResult.success || !userResult.data) {
-            return res.redirect(`${frontendUrl}/verify-email?error=invalid_token`);
-        }
-        
-        const user = userResult.data;
-        
-        // If already verified, redirect to frontend with success (include token for reference)
-        if (user.is_email_verified) {
-            return res.redirect(`${frontendUrl}/verify-email?status=already_verified&email=${encodeURIComponent(user.email)}&token=${token}`);
-        }
-        
-        // Check if token is expired (only if expires date exists)
-        if (user.email_verification_expires && new Date() > new Date(user.email_verification_expires)) {
-            return res.redirect(`${frontendUrl}/verify-email?error=expired_token&token=${token}&email=${encodeURIComponent(user.email)}`);
-        }
-        
-        // Update user as verified (keep token for future reference, just clear expiration)
-        await executeQuery(
-            'UPDATE users SET is_email_verified = 1, email_verification_expires = NULL WHERE id = ?',
-            [user.id]
-        );
-        
-        // Redirect to frontend with success (include token for reference)
-        return res.redirect(`${frontendUrl}/verify-email?status=success&email=${encodeURIComponent(user.email)}&token=${token}`);
-        
-    } catch (error) {
-        console.error('Email verification error:', error);
-        return res.redirect(`${frontendUrl}/verify-email?error=server_error`);
-    }
+// Serve verification page - Show page with verify button (don't auto-verify)
+app.get('/verify-email', (req, res) => {
+    // Simply serve the verification page - let the frontend handle verification on button click
+    res.sendFile(path.join(__dirname, 'public', 'verify.html'));
 });
 
 // Serve verification JavaScript

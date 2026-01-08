@@ -1,12 +1,15 @@
 // Email verification script
+let verificationToken = null;
+
+// Get token from URL parameters on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Get token from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    verificationToken = urlParams.get('token');
     
     const statusDiv = document.getElementById('status');
+    const verifyBtn = document.getElementById('verifyBtn');
     
-    if (!token) {
+    if (!verificationToken) {
         statusDiv.innerHTML = `
             <div class="error">❌ Invalid Verification Link</div>
             <div class="message">No verification token found in the URL.</div>
@@ -14,15 +17,35 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         return;
     }
+    
+    // Token exists, show verify button (already shown in HTML)
+    console.log('Verification token loaded:', verificationToken);
+});
 
-    // Show loading state
-    statusDiv.innerHTML = `
-        <div class="loading">🔄 Checking verification status...</div>
-        <div class="message">Verification token: <div class="token-display">${token}</div></div>
+// Function to verify email when button is clicked
+function verifyEmail() {
+    const statusDiv = document.getElementById('status');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const resultDiv = document.getElementById('result');
+    
+    if (!verificationToken) {
+        resultDiv.innerHTML = `
+            <div class="error">❌ No verification token found</div>
+        `;
+        resultDiv.style.display = 'block';
+        return;
+    }
+    
+    // Disable button and show loading
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = '🔄 Verifying...';
+    resultDiv.innerHTML = `
+        <div class="loading">🔄 Verifying your email address...</div>
     `;
+    resultDiv.style.display = 'block';
     
     // Make API call to verify email
-    console.log('Starting verification for token:', token);
+    console.log('Starting verification for token:', verificationToken);
     
     // Add timeout to the fetch request
     const controller = new AbortController();
@@ -33,13 +56,12 @@ document.addEventListener('DOMContentLoaded', function() {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ token: token }),
+        body: JSON.stringify({ token: verificationToken }),
         signal: controller.signal
     })
     .then(response => {
-        clearTimeout(timeoutId); // Clear timeout on successful response
+        clearTimeout(timeoutId);
         console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
         
         if (!response.ok) {
             return response.text().then(text => {
@@ -52,35 +74,43 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(data => {
         console.log('Verification response:', data);
+        
+        // Hide verify button
+        verifyBtn.style.display = 'none';
+        
         if (data.success) {
             // Check if this was already verified or newly verified
             if (data.message && data.message.includes('already verified')) {
-                statusDiv.innerHTML = `
+                resultDiv.innerHTML = `
                     <div class="success">✅ Email Already Verified!</div>
                     <div class="message">
                         Your email address was already verified. You can now log in to your account.
                     </div>
-                    <a href="/" class="btn btn-success">Continue to Login</a>
+                    <a href="${data.data?.redirectUrl || '/'}" class="btn btn-success">Continue to Login</a>
                 `;
             } else {
-                statusDiv.innerHTML = `
+                resultDiv.innerHTML = `
                     <div class="success">✅ Email Verified Successfully!</div>
                     <div class="message">
                         Your email address has been verified. You can now log in to your account.
                     </div>
-                    <a href="/" class="btn btn-success">Continue to Login</a>
+                    <a href="${data.data?.redirectUrl || '/'}" class="btn btn-success">Continue to Login</a>
                 `;
             }
         } else {
-            statusDiv.innerHTML = `
+            resultDiv.innerHTML = `
                 <div class="error">❌ Verification Failed</div>
                 <div class="message">${data.message || 'Email verification failed. The token may be invalid or expired.'}</div>
                 <a href="/" class="btn">Go to Home</a>
             `;
+            // Re-enable button for retry
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = '✅ Verify Email Address';
+            verifyBtn.style.display = 'inline-block';
         }
     })
     .catch(error => {
-        clearTimeout(timeoutId); // Clear timeout on error
+        clearTimeout(timeoutId);
         console.error('Verification error:', error);
         
         let errorMessage = 'There was an error verifying your email. Please try again later.';
@@ -91,14 +121,16 @@ document.addEventListener('DOMContentLoaded', function() {
             errorMessage = error.message;
         }
         
-        statusDiv.innerHTML = `
+        resultDiv.innerHTML = `
             <div class="error">❌ Verification Error</div>
             <div class="message">${errorMessage}</div>
-            <div class="message">Please check the browser console (F12) for more details.</div>
-            <div class="message">You can also try refreshing the page.</div>
-            <a href="/" class="btn">Go to Home</a>
-            <a href="javascript:location.reload()" class="btn">Refresh Page</a>
+            <a href="javascript:location.reload()" class="btn">Try Again</a>
         `;
+        
+        // Re-enable button for retry
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = '✅ Verify Email Address';
+        verifyBtn.style.display = 'inline-block';
     });
-});
+}
 

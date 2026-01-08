@@ -48,18 +48,27 @@
         .btn {
             background: #007bff;
             color: white;
-            padding: 12px 30px;
+            padding: 15px 40px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 18px;
+            font-weight: bold;
             cursor: pointer;
             text-decoration: none;
             display: inline-block;
-            margin: 10px;
-            transition: background 0.3s;
+            margin: 20px 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,123,255,0.3);
         }
         .btn:hover {
             background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,123,255,0.4);
+        }
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
         }
         .btn-success {
             background: #28a745;
@@ -82,8 +91,10 @@
 <body>
     <div class="container">
         <div id="status">
-            <div class="loading">🔄 Verifying your email...</div>
-            <div class="message">Please wait while we verify your email address.</div>
+            <div class="success">📧 Email Verification</div>
+            <div class="message">Click the button below to verify your email address.</div>
+            <button id="verifyBtn" class="btn" onclick="verifyEmail()">✅ Verify Email Address</button>
+            <div id="result" style="display: none; margin-top: 20px;"></div>
         </div>
     </div>
 
