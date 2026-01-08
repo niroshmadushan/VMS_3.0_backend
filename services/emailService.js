@@ -3,6 +3,7 @@ const config = require('../config/config');
 
 class EmailService {
     constructor() {
+        // Office 365 SMTP configuration
         this.transporter = nodemailer.createTransport({
             host: config.email.host,
             port: config.email.port,
@@ -12,9 +13,19 @@ class EmailService {
                 pass: config.email.pass
             },
             tls: {
-                rejectUnauthorized: false // Allow self-signed certificates (needed for some Office 365 configurations)
+                // Do not fail on invalid certs
+                rejectUnauthorized: false,
+                // Office 365 specific TLS settings
+                minVersion: 'TLSv1.2'
             },
-            requireTLS: true // Require TLS for Office 365
+            requireTLS: true, // Require TLS for Office 365
+            // Office 365 specific settings
+            connectionTimeout: 60000, // 60 seconds
+            greetingTimeout: 30000, // 30 seconds
+            socketTimeout: 60000, // 60 seconds
+            // Debug mode for troubleshooting
+            debug: process.env.NODE_ENV === 'development',
+            logger: process.env.NODE_ENV === 'development'
         });
 
         // Verify connection configuration
@@ -25,8 +36,23 @@ class EmailService {
         try {
             await this.transporter.verify();
             console.log('✅ Email service ready');
+            console.log(`📧 Email configured: ${config.email.user}`);
         } catch (error) {
             console.error('❌ Email service configuration error:', error.message);
+            console.error('📧 Email user:', config.email.user);
+            console.error('🔧 SMTP Host:', config.email.host);
+            console.error('🔧 SMTP Port:', config.email.port);
+            
+            // Provide specific error guidance
+            if (error.message.includes('535') || error.message.includes('Authentication unsuccessful')) {
+                console.error('\n⚠️  AUTHENTICATION ERROR DETECTED');
+                console.error('Possible solutions:');
+                console.error('1. Verify the app password is correct');
+                console.error('2. Ensure SMTP AUTH is enabled for the account in Microsoft 365 admin center');
+                console.error('3. Check if two-factor authentication is enabled');
+                console.error('4. Verify the email address is correct:', config.email.user);
+                console.error('5. Try generating a new app password');
+            }
         }
     }
 

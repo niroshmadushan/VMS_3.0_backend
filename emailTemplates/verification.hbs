@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        .header {
+            background: #007bff;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            padding: 30px;
+            background: #f9f9f9;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .code-box {
+            background: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Email Verification</h1>
+        </div>
+        <div class="content">
+            <p>Hello {{firstName}},</p>
+            <p>{{message}}</p>
+            {{#if verificationCode}}
+            <div class="code-box">{{verificationCode}}</div>
+            <p><strong>⏰ This code will expire in {{expiryTime}}.</strong></p>
+            {{/if}}
+            {{#if verificationUrl}}
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{verificationUrl}}" class="button">✅ Verify Email Address</a>
+            </div>
+            <p style="text-align: center; color: #666; font-size: 14px;">
+                Or copy this link:<br>
+                <a href="{{verificationUrl}}" style="color: #007bff; word-break: break-all;">{{verificationUrl}}</a>
+            </p>
+            {{/if}}
+        </div>
+        <div class="footer">
+            <p>If you didn't request this, please ignore this email.</p>
+        </div>
+    </div>
+</body>
+</html>
