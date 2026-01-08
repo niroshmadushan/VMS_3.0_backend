@@ -159,7 +159,7 @@ const maintenanceMode = async (req, res, next) => {
     }
 };
 
-// CORS configuration - ONLY https://people.cbiz365.com/ ALLOWED
+// CORS configuration - ONLY https://people.cbiz365.com and https://peopleapi.cbiz365.com ALLOWED
 const corsOptions = {
     origin: function (origin, callback) {
         // Allow requests with no origin (mobile apps, curl, Postman, etc.)
@@ -167,12 +167,14 @@ const corsOptions = {
             return callback(null, true);
         }
         
-        // ONLY https://people.cbiz365.com/ IS ALLOWED - All other origins are blocked
+        // ONLY https://people.cbiz365.com and https://peopleapi.cbiz365.com ARE ALLOWED - All other origins are blocked
         const allowedOrigins = [
             'https://people.cbiz365.com',
             'https://people.cbiz365.com/',
+            'https://peopleapi.cbiz365.com',
+            'https://peopleapi.cbiz365.com/',
             // Also allow config frontend URL if it matches
-            config.app.frontendUrl && config.app.frontendUrl.includes('people.cbiz365.com') ? config.app.frontendUrl : null
+            config.app.frontendUrl && (config.app.frontendUrl.includes('people.cbiz365.com') || config.app.frontendUrl.includes('peopleapi.cbiz365.com')) ? config.app.frontendUrl : null
         ].filter(Boolean); // Remove null values
         
         // Normalize origin (remove trailing slash for comparison)
@@ -188,7 +190,7 @@ const corsOptions = {
             callback(null, true);
         } else {
             console.log('[CORS] ❌ Origin blocked:', normalizedOrigin);
-            callback(new Error('Not allowed by CORS - Only https://people.cbiz365.com is permitted'));
+            callback(new Error('Not allowed by CORS - Only https://people.cbiz365.com and https://peopleapi.cbiz365.com are permitted'));
         }
     },
     credentials: true,

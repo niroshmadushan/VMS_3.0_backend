@@ -1,11 +1,11 @@
-# 🔒 CORS Configuration Updated - Only https://people.cbiz365.com Allowed
+# 🔒 CORS Configuration Updated - Only https://people.cbiz365.com and https://peopleapi.cbiz365.com Allowed
 
 ## ✅ **Changes Made**
 
 **File Modified:** `middleware/security.js`  
 **Config Updated:** `config.env`
 
-**Status:** ✅ Complete - Only `https://people.cbiz365.com` is now allowed, all other origins are blocked
+**Status:** ✅ Complete - Only `https://people.cbiz365.com` and `https://peopleapi.cbiz365.com` are now allowed, all other origins are blocked
 
 ---
 
@@ -28,6 +28,8 @@ The following origins (and all others) are now **DISALLOWED**:
 Only the following origins are allowed:
 - ✅ `https://people.cbiz365.com`
 - ✅ `https://people.cbiz365.com/` (with trailing slash)
+- ✅ `https://peopleapi.cbiz365.com`
+- ✅ `https://peopleapi.cbiz365.com/` (with trailing slash)
 
 ---
 
@@ -44,12 +46,14 @@ const allowedOrigins = [
 
 ### **After:**
 ```javascript
-// ONLY https://people.cbiz365.com/ IS ALLOWED - All other origins are blocked
+// ONLY https://people.cbiz365.com and https://peopleapi.cbiz365.com ARE ALLOWED - All other origins are blocked
 const allowedOrigins = [
     'https://people.cbiz365.com',
     'https://people.cbiz365.com/',
+    'https://peopleapi.cbiz365.com',
+    'https://peopleapi.cbiz365.com/',
     // Also allow config frontend URL if it matches
-    config.app.frontendUrl && config.app.frontendUrl.includes('people.cbiz365.com') ? config.app.frontendUrl : null
+    config.app.frontendUrl && (config.app.frontendUrl.includes('people.cbiz365.com') || config.app.frontendUrl.includes('peopleapi.cbiz365.com')) ? config.app.frontendUrl : null
 ].filter(Boolean);
 
 // Normalize origin (remove trailing slash for comparison)
@@ -59,7 +63,7 @@ const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ''));
 if (normalizedAllowed.indexOf(normalizedOrigin) !== -1) {
     callback(null, true);
 } else {
-    callback(new Error('Not allowed by CORS - Only https://people.cbiz365.com is permitted'));
+    callback(new Error('Not allowed by CORS - Only https://people.cbiz365.com and https://peopleapi.cbiz365.com are permitted'));
 }
 ```
 
@@ -113,7 +117,7 @@ fetch('https://your-backend-url.com/api/health')
 
 ## ⚠️ **Important Notes**
 
-1. **Production Only:** This configuration is for production. The backend will only accept requests from `https://people.cbiz365.com`.
+1. **Production Only:** This configuration is for production. The backend will only accept requests from `https://people.cbiz365.com` and `https://peopleapi.cbiz365.com`.
 
 2. **HTTPS Required:** The frontend must use HTTPS (`https://people.cbiz365.com`), not HTTP.
 
@@ -150,7 +154,7 @@ node server.js
 
 ## 📋 **Verification Checklist**
 
-- [x] CORS configuration updated to only allow `https://people.cbiz365.com`
+- [x] CORS configuration updated to only allow `https://people.cbiz365.com` and `https://peopleapi.cbiz365.com`
 - [x] All other origins removed from allowed list
 - [x] Config.env updated with new frontend URL
 - [x] Error message updated to be clear
@@ -180,6 +184,8 @@ If you need to test locally during development, you have a few options:
 const allowedOrigins = [
     'https://people.cbiz365.com',
     'https://people.cbiz365.com/',
+    'https://peopleapi.cbiz365.com',
+    'https://peopleapi.cbiz365.com/',
     'http://localhost:3000', // TEMPORARY - Remove in production
     'http://localhost:3001'  // TEMPORARY - Remove in production
 ].filter(Boolean);
@@ -196,6 +202,8 @@ const isDevelopment = config.nodeEnv === 'development';
 const allowedOrigins = [
     'https://people.cbiz365.com',
     'https://people.cbiz365.com/',
+    'https://peopleapi.cbiz365.com',
+    'https://peopleapi.cbiz365.com/',
     ...(isDevelopment ? [
         'http://localhost:3000',
         'http://localhost:3001'
@@ -209,7 +217,7 @@ const allowedOrigins = [
 
 If you encounter CORS errors:
 
-1. **Check Frontend URL:** Ensure your frontend is deployed to `https://people.cbiz365.com`
+1. **Check Frontend URL:** Ensure your frontend is deployed to `https://people.cbiz365.com` or `https://peopleapi.cbiz365.com`
 2. **Check Browser Console:** Look for CORS error messages
 3. **Verify Server Restart:** Make sure the backend server was restarted after changes
 4. **Check Origin Header:** Verify the `Origin` header in browser developer tools (Network tab)
@@ -219,7 +227,7 @@ If you encounter CORS errors:
 
 ## 🌐 **Frontend Integration**
 
-Your frontend at `https://people.cbiz365.com` can now make API calls:
+Your frontends at `https://people.cbiz365.com` and `https://peopleapi.cbiz365.com` can now make API calls:
 
 ```javascript
 // Example API call from frontend
@@ -253,5 +261,7 @@ fetch(`${API_BASE}/dashboard/statistics`, {
 ---
 
 **Date Updated:** 2025-01-15  
-**Status:** ✅ Complete - Only `https://people.cbiz365.com` allowed  
-**Frontend URL:** https://people.cbiz365.com
+**Status:** ✅ Complete - Only `https://people.cbiz365.com` and `https://peopleapi.cbiz365.com` allowed  
+**Allowed Origins:** 
+- https://people.cbiz365.com
+- https://peopleapi.cbiz365.com
