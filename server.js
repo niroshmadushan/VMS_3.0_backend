@@ -4,6 +4,7 @@ const path = require('path');
 const config = require('./config/config');
 const { testConnection } = require('./config/database');
 const { securityHeaders, requestLogger, maintenanceMode, corsOptions, sanitizeInput } = require('./middleware/security');
+const { validateFrontendOrigin, cleanupBlacklist } = require('./middleware/security');
 const { authenticateToken } = require('./middleware/auth');
 
 // Import routes
@@ -20,15 +21,18 @@ const dashboardRoutes = require('./routes/dashboard');
 const passHistoryRoutes = require('./routes/passHistory');
 const bookingEmailRoutes = require('./routes/bookingEmail');
 
+// Import security middleware functions
+const { getBlacklistStats } = require('./middleware/security');
+
 // Initialize Express app
 const app = express();
 
 // Trust proxy (for rate limiting and IP detection)
 app.set('trust proxy', 1);
 
-// Security middleware
-app.use(securityHeaders);
-app.use(sanitizeInput);
+// Security middleware (temporarily disabled old functions)
+// app.use(securityHeaders);
+// app.use(sanitizeInput);
 
 // CORS middleware - must be before routes
 app.use(cors(corsOptions));
@@ -36,15 +40,18 @@ app.use(cors(corsOptions));
 // Handle preflight OPTIONS requests explicitly
 app.options('*', cors(corsOptions));
 
+// Frontend origin validation - blocks all non-frontend requests (after CORS)
+app.use(validateFrontendOrigin);
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware
-app.use(requestLogger);
+// Request logging middleware (temporarily disabled)
+// app.use(requestLogger);
 
-// Maintenance mode check
-app.use(maintenanceMode);
+// Maintenance mode check (temporarily disabled)
+// app.use(maintenanceMode);
 
 // Public routes (no authentication required)
 // Health check endpoint
@@ -60,9 +67,8 @@ app.get('/health', (req, res) => {
 // Serve static files from public directory
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
-// Serve verification page - Show page with verify button (don't auto-verify)
+// Serve verification page
 app.get('/verify-email', (req, res) => {
-    // Simply serve the verification page - let the frontend handle verification on button click
     res.sendFile(path.join(__dirname, 'public', 'verify.html'));
 });
 
@@ -75,6 +81,9 @@ app.get('/verify.js', (req, res) => {
 app.get('/reset-password', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'reset-password.html'));
 });
+
+// Security monitoring route (requires authentication)
+app.get('/api/security/blacklist-stats', authenticateToken, getBlacklistStats);
 
 // Public API routes - Auth routes handle their own authentication
 app.use('/api/auth', authRoutes);
@@ -186,6 +195,10 @@ const startServer = async () => {
             console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
             console.log(`📈 Health check: http://localhost:${PORT}/health`);
             console.log(`🌍 Environment: ${config.nodeEnv}`);
+
+            // Start blacklist cleanup job (runs every 24 hours)
+            setInterval(cleanupBlacklist, 24 * 60 * 60 * 1000);
+            console.log(`🧹 Blacklist cleanup job scheduled (runs every 24 hours)`);
         });
 
     } catch (error) {

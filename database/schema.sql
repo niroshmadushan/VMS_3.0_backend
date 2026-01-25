@@ -113,6 +113,36 @@ CREATE TABLE IF NOT EXISTS api_usage (
     INDEX idx_created_at (created_at)
 );
 
+-- Secrets table for storing sensitive configuration values
+CREATE TABLE IF NOT EXISTS secret_tbl (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    secret_key VARCHAR(100) UNIQUE NOT NULL,
+    secret_value VARCHAR(255) NOT NULL,
+    description VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_secret_key (secret_key),
+    INDEX idx_is_active (is_active)
+);
+
+-- Request blacklist table for security
+CREATE TABLE IF NOT EXISTS request_blacklist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip_address VARCHAR(45) NOT NULL,
+    domain VARCHAR(255),
+    user_agent TEXT,
+    referer VARCHAR(500),
+    origin VARCHAR(500),
+    headers JSON,
+    reason ENUM('invalid_origin', 'suspicious_headers', 'blacklisted_ip', 'rate_limit_exceeded') NOT NULL,
+    blocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_ip_address (ip_address),
+    INDEX idx_domain (domain),
+    INDEX idx_reason (reason),
+    INDEX idx_blocked_at (blocked_at)
+);
+
 -- System settings table
 CREATE TABLE IF NOT EXISTS system_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -120,6 +150,30 @@ CREATE TABLE IF NOT EXISTS system_settings (
     setting_value TEXT,
     description TEXT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Insert default signup secret code
+INSERT IGNORE INTO secret_tbl (secret_key, secret_value, description) VALUES
+('signup_secret_code', 'CONNEX2024', 'Secret code required for user registration');
+
+-- Request blacklist table for blocking malicious requests
+CREATE TABLE IF NOT EXISTS request_blacklist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip_address VARCHAR(45) NOT NULL,
+    user_agent TEXT,
+    origin VARCHAR(255),
+    referer VARCHAR(500),
+    request_path VARCHAR(500),
+    request_method VARCHAR(10),
+    headers JSON,
+    blocked_reason VARCHAR(255),
+    blocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_permanent BOOLEAN DEFAULT FALSE,
+    expires_at DATETIME NULL,
+    INDEX idx_ip_address (ip_address),
+    INDEX idx_origin (origin),
+    INDEX idx_blocked_at (blocked_at),
+    INDEX idx_is_permanent (is_permanent)
 );
 
 -- Insert default system settings

@@ -29,10 +29,13 @@ const signupValidation = [
         .trim()
         .isLength({ min: 2, max: 50 })
         .withMessage('Last name must be between 2 and 50 characters'),
-    body('role')
-        .optional()
-        .isIn(['admin', 'user', 'moderator', 'staff', 'assistant'])
-        .withMessage('Invalid role specified')
+    body('secretCode')
+        .trim()
+        .notEmpty()
+        .withMessage('Secret code is required'),
+    // SECURITY FIX: Remove role validation from signup
+    // All signups are forced to 'user' role - roles cannot be set via signup endpoint
+    // body('role') - REMOVED to prevent role manipulation
 ];
 
 // Signup controller
@@ -48,7 +51,35 @@ const signup = async (req, res) => {
             });
         }
 
-        const { email, password, firstName, lastName, role = 'user', ...customFields } = req.body;
+        const { email, password, firstName, lastName, secretCode, ...customFields } = req.body;
+
+        // SECURITY FIX: Force all signups to be 'user' role only
+        // Only authenticated admins can create staff/admin accounts through separate endpoints
+        const role = 'user';
+        console.log('🔒 Security: Forcing signup role to "user" (ignoring any role from request body)');
+
+        // Validate secret code from database
+        // Database has columns: secret_code, code_name
+        const secretQuery = `
+            SELECT secret_code FROM secret_tbl
+            WHERE is_active = 1
+            LIMIT 1
+        `;
+        const secretResult = await getOne(secretQuery);
+
+        if (!secretResult.success || !secretResult.data) {
+            return res.status(500).json({
+                success: false,
+                message: 'Secret code configuration error'
+            });
+        }
+
+        if (secretCode !== secretResult.data.secret_code) {
+            return res.status(403).json({
+                success: false,
+                message: 'Invalid secret code provided'
+            });
+        }
 
         // Check if email already exists
         const existingUser = await getOne('SELECT id FROM users WHERE email = ?', [email]);
@@ -146,7 +177,7 @@ const verifyEmail = async (req, res) => {
             });
         }
 
-        // First check if user exists with this token (token is kept even after verification)
+        // First check if user exists with this token (regardless of verification status)
         const userExistsQuery = `
             SELECT id, email, email_verification_expires, is_email_verified 
             FROM users 
@@ -163,28 +194,23 @@ const verifyEmail = async (req, res) => {
 
         const { id, email, email_verification_expires, is_email_verified } = userExistsResult.data;
 
-        // If already verified, return success message (don't treat as error)
+        // If already verified, return success message
         if (is_email_verified) {
-            const frontendUrl = config.app.frontendUrl || 'https://people.cbiz365.com';
             return res.status(200).json({
                 success: true,
-                message: 'Email is already verified',
-                data: {
-                    email: email,
-                    redirectUrl: frontendUrl // Redirect directly to frontend login page
-                }
+                message: 'Email is already verified'
             });
         }
 
-        // Check if token is expired (only if expires date exists)
-        if (email_verification_expires && new Date() > new Date(email_verification_expires)) {
+        // Check if token is expired
+        if (new Date() > new Date(email_verification_expires)) {
             return res.status(400).json({
                 success: false,
                 message: 'Verification token has expired'
             });
         }
 
-        // Update user as verified (keep token for future reference, just clear expiration)
+        // Update user as verified (keep token for reference but mark as verified)
         const updateQuery = `
             UPDATE users 
             SET is_email_verified = 1, email_verification_expires = NULL 
@@ -199,16 +225,9 @@ const verifyEmail = async (req, res) => {
             });
         }
 
-        // Get frontend URL for redirect (go directly to frontend, not verify-email page)
-        const frontendUrl = config.app.frontendUrl || 'https://people.cbiz365.com';
-
         res.json({
             success: true,
-            message: 'Email verified successfully',
-            data: {
-                email: email,
-                redirectUrl: frontendUrl // Redirect directly to frontend login page
-            }
+            message: 'Email verified successfully'
         });
 
     } catch (error) {
@@ -295,6 +314,15 @@ const login = async (req, res) => {
                 message: 'Please verify your email address before logging in',
                 canResendVerification: true,
                 email: email
+            });
+        }
+
+        // ROLE RESTRICTION: Block 'user' role from logging in
+        // Only 'admin' and 'staff' are allowed to access the system
+        if (user.role === 'user') {
+            return res.status(403).json({
+                success: false,
+                message: 'Access Restricted: Your account is currently in "User" status. Please contact an administrator to verify your account and upgrade your role to access the system.'
             });
         }
 
@@ -523,247 +551,11 @@ const resendVerificationEmail = async (req, res) => {
     }
 };
 
-// Allowed email domains for secure signup
-const ALLOWED_EMAIL_DOMAINS = [
-    'connexit.biz',
-    'connexcodeworks.biz',
-    'conex360.biz',
-    'connexvectra.biz'
-];
-
-// Secure signup validation rules
-const secureSignupValidation = [
-    body('email')
-        .isEmail()
-        .withMessage('Please provide a valid email address')
-        .custom((email) => {
-            const domain = email.split('@')[1]?.toLowerCase();
-            if (!ALLOWED_EMAIL_DOMAINS.includes(domain)) {
-                throw new Error(`Email must be from one of the allowed domains: ${ALLOWED_EMAIL_DOMAINS.join(', ')}`);
-            }
-            return true;
-        }),
-    body('password')
-        .isLength({ min: 12 })
-        .withMessage('Password must be at least 12 characters long')
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/])[A-Za-z\d@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/]/)
-        .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
-    body('firstName')
-        .trim()
-        .isLength({ min: 2, max: 50 })
-        .withMessage('First name must be between 2 and 50 characters')
-        .matches(/^[a-zA-Z\s'-]+$/)
-        .withMessage('First name can only contain letters, spaces, hyphens, and apostrophes'),
-    body('lastName')
-        .trim()
-        .isLength({ min: 2, max: 50 })
-        .withMessage('Last name must be between 2 and 50 characters')
-        .matches(/^[a-zA-Z\s'-]+$/)
-        .withMessage('Last name can only contain letters, spaces, hyphens, and apostrophes'),
-    body('secretCode')
-        .notEmpty()
-        .withMessage('Secret code is required')
-        .trim()
-        .isLength({ min: 5, max: 100 })
-        .withMessage('Secret code must be between 5 and 100 characters'),
-    body('role')
-        .optional()
-        .isIn(['user', 'staff', 'assistant'])
-        .withMessage('Invalid role specified. Only user, staff, or assistant roles are allowed')
-];
-
-// Secure signup controller with secret code validation
-const secureSignup = async (req, res) => {
-    try {
-        // Log request for debugging
-        console.log('[SECURE SIGNUP] Request received:', {
-            email: req.body?.email,
-            hasPassword: !!req.body?.password,
-            firstName: req.body?.firstName,
-            lastName: req.body?.lastName,
-            hasSecretCode: !!req.body?.secretCode,
-            role: req.body?.role
-        });
-
-        // Check validation errors
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            console.log('[SECURE SIGNUP] Validation errors:', errors.array());
-            return res.status(400).json({
-                success: false,
-                message: 'Validation failed',
-                errors: errors.array().map(err => ({
-                    field: err.param,
-                    message: err.msg,
-                    value: err.value
-                }))
-            });
-        }
-
-        const { email, password, firstName, lastName, secretCode, role = 'user', ...customFields } = req.body;
-
-        // Validate and check secret code
-        let secretCodeResult;
-        try {
-            secretCodeResult = await getOne(
-                `SELECT id, secret_code, is_active, max_uses, used_count, expires_at 
-                 FROM secret_tbl 
-                 WHERE secret_code = ? AND is_active = 1`,
-                [secretCode.trim().toUpperCase()]
-            );
-        } catch (dbError) {
-            console.error('[SECURE SIGNUP] Database error checking secret code:', dbError);
-            // Check if table doesn't exist
-            if (dbError.message && dbError.message.includes("doesn't exist")) {
-                return res.status(500).json({
-                    success: false,
-                    message: 'Secret codes table not found. Please run the database migration first.',
-                    error: 'Database table missing'
-                });
-            }
-            return res.status(500).json({
-                success: false,
-                message: 'Database error while validating secret code'
-            });
-        }
-
-        if (!secretCodeResult.success || !secretCodeResult.data) {
-            console.log('[SECURE SIGNUP] Invalid secret code:', secretCode.trim().toUpperCase());
-            return res.status(403).json({
-                success: false,
-                message: 'Invalid or inactive secret code',
-                hint: 'Please check that the secret code is correct and active'
-            });
-        }
-
-        const secret = secretCodeResult.data;
-
-        // Check if secret code has expired
-        if (secret.expires_at && new Date(secret.expires_at) < new Date()) {
-            return res.status(403).json({
-                success: false,
-                message: 'Secret code has expired'
-            });
-        }
-
-        // Check if secret code has reached max uses
-        if (secret.max_uses !== null && secret.used_count >= secret.max_uses) {
-            return res.status(403).json({
-                success: false,
-                message: 'Secret code has reached maximum usage limit'
-            });
-        }
-
-        // Validate email domain
-        const emailDomain = email.split('@')[1]?.toLowerCase();
-        if (!ALLOWED_EMAIL_DOMAINS.includes(emailDomain)) {
-            return res.status(403).json({
-                success: false,
-                message: `Email must be from one of the allowed domains: ${ALLOWED_EMAIL_DOMAINS.join(', ')}`
-            });
-        }
-
-        // Check if email already exists
-        const existingUser = await getOne('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
-        if (existingUser.success && existingUser.data) {
-            return res.status(409).json({
-                success: false,
-                message: 'Email address already registered'
-            });
-        }
-
-        // Hash password with higher rounds for better security
-        const hashedPassword = await bcrypt.hash(password, config.security.bcryptRounds || 12);
-
-        // Generate verification token
-        const verificationToken = uuidv4();
-        const verificationExpires = new Date();
-        verificationExpires.setHours(verificationExpires.getHours() + 24); // 24 hours
-
-        // Use transaction to ensure data consistency
-        const result = await transaction(async (connection) => {
-            // Insert user
-            const userQuery = `
-                INSERT INTO users (email, password, role, email_verification_token, email_verification_expires)
-                VALUES (?, ?, ?, ?, ?)
-            `;
-            const [userResult] = await connection.execute(userQuery, [
-                email.toLowerCase(), hashedPassword, role, verificationToken, verificationExpires
-            ]);
-            const userId = userResult.insertId;
-
-            // Insert profile
-            const profileQuery = `
-                INSERT INTO profiles (user_id, first_name, last_name, custom_fields)
-                VALUES (?, ?, ?, ?)
-            `;
-            await connection.execute(profileQuery, [
-                userId, firstName.trim(), lastName.trim(), JSON.stringify(customFields)
-            ]);
-
-            // Update secret code usage count
-            const updateSecretQuery = `
-                UPDATE secret_tbl 
-                SET used_count = used_count + 1, updated_at = NOW()
-                WHERE id = ?
-            `;
-            await connection.execute(updateSecretQuery, [secret.id]);
-
-            return userId;
-        });
-
-        if (!result.success) {
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to create user account'
-            });
-        }
-
-        // Send verification email
-        const emailResult = await emailService.sendVerificationEmail(
-            email, firstName, verificationToken
-        );
-
-        if (!emailResult.success) {
-            console.error('Failed to send verification email:', emailResult.error);
-            // Don't fail the signup if email fails, but log it
-        }
-
-        // Log signup attempt with IP and user agent
-        await executeQuery(
-            'INSERT INTO api_usage (endpoint, method, ip_address, user_agent, response_status) VALUES (?, ?, ?, ?, ?)',
-            ['/api/auth/secure-signup', 'POST', req.ip, req.get('User-Agent'), 201]
-        );
-
-        res.status(201).json({
-            success: true,
-            message: 'Account created successfully. Please check your email for verification.',
-            data: {
-                userId: result.data,
-                email: email,
-                role: role,
-                verificationRequired: true,
-                emailDomain: emailDomain
-            }
-        });
-
-    } catch (error) {
-        console.error('Secure signup error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-};
-
 module.exports = {
     signup,
-    secureSignup,
     verifyEmail,
     login,
     verifyOTP,
     resendVerificationEmail,
-    signupValidation,
-    secureSignupValidation
+    signupValidation
 };

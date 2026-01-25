@@ -52,7 +52,7 @@ const getStatistics = async (req, res) => {
 
         // Today's Visitors
         const todaysVisitorsResult = await getOne(
-            `SELECT COUNT(DISTINCT ep.id) as count
+            `SELECT COUNT(DISTINCT ep.member_id) as count
              FROM external_participants ep
              INNER JOIN bookings b ON ep.booking_id = b.id
              WHERE DATE(b.booking_date) = CURDATE()
@@ -136,15 +136,15 @@ const getRecentActivity = async (req, res) => {
         const activitiesResult = await executeQuery(
             `(SELECT 
                 b.id as activity_id,
-                'booking_created' COLLATE utf8mb4_unicode_ci as type,
-                'New booking created' COLLATE utf8mb4_unicode_ci as title,
-                CONCAT(p.name, ' - ', DATE_FORMAT(b.start_time, '%h:%i %p')) COLLATE utf8mb4_unicode_ci as description,
-                CONCAT(pr.first_name, ' ', pr.last_name) COLLATE utf8mb4_unicode_ci as user,
+                'booking_created' as type,
+                'New booking created' as title,
+                CONCAT(p.name, ' - ', DATE_FORMAT(b.start_time, '%h:%i %p')) as description,
+                CONCAT(pr.first_name, ' ', pr.last_name) as user,
                 b.created_at as timestamp,
                 0 as urgent,
                 JSON_OBJECT('booking_id', b.id, 'place_name', p.name, 'start_time', b.start_time) as metadata
              FROM bookings b
-             LEFT JOIN places p ON BINARY b.place_id = BINARY p.id
+             LEFT JOIN places p ON b.place_id = p.id
              LEFT JOIN users u ON b.created_by = u.id
              LEFT JOIN profiles pr ON u.id = pr.user_id
              WHERE b.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
@@ -154,17 +154,17 @@ const getRecentActivity = async (req, res) => {
              
              (SELECT 
                 pa.id as activity_id,
-                'visitor_checkin' COLLATE utf8mb4_unicode_ci as type,
-                'Visitor checked in' COLLATE utf8mb4_unicode_ci as title,
-                CONCAT(em.full_name, ' - ', p.name) COLLATE utf8mb4_unicode_ci as description,
-                'Reception' COLLATE utf8mb4_unicode_ci as user,
+                'visitor_checkin' as type,
+                'Visitor checked in' as title,
+                CONCAT(em.full_name, ' - ', p.name) as description,
+                'Reception' as user,
                 pa.assigned_date as timestamp,
                 0 as urgent,
                 JSON_OBJECT('visitor_name', em.full_name, 'place_name', p.name, 'booking_id', b.id) as metadata
              FROM pass_assignments pa
-             INNER JOIN external_members em ON BINARY pa.holder_id = BINARY em.id
-             INNER JOIN bookings b ON BINARY pa.booking_id = BINARY b.id
-             INNER JOIN places p ON BINARY b.place_id = BINARY p.id
+             INNER JOIN external_members em ON pa.holder_id = em.id
+             INNER JOIN bookings b ON pa.booking_id = b.id
+             INNER JOIN places p ON b.place_id = p.id
              WHERE pa.assigned_date >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
              AND pa.action_type = 'assigned'
              AND pa.is_deleted = 0)
@@ -220,12 +220,12 @@ const getTodaysSchedule = async (req, res) => {
                 b.start_time,
                 b.end_time,
                 b.status,
-                CONCAT(COALESCE(pr.first_name, ''), ' ', COALESCE(pr.last_name, '')) COLLATE utf8mb4_unicode_ci as responsible_person,
+                CONCAT(pr.first_name, ' ', pr.last_name) as responsible_person,
                 (SELECT COUNT(*) FROM booking_participants bp WHERE bp.booking_id = b.id AND bp.is_deleted = 0) as participants_count,
                 (SELECT COUNT(*) FROM external_participants ep WHERE ep.booking_id = b.id AND ep.is_deleted = 0) as external_visitors_count,
                 (SELECT COUNT(*) > 0 FROM booking_refreshments br WHERE br.booking_id = b.id AND br.is_deleted = 0) as has_refreshments
              FROM bookings b
-             LEFT JOIN places p ON BINARY b.place_id = BINARY p.id
+             LEFT JOIN places p ON b.place_id = p.id
              LEFT JOIN users u ON b.created_by = u.id
              LEFT JOIN profiles pr ON u.id = pr.user_id
              WHERE DATE(b.booking_date) = CURDATE()
@@ -388,7 +388,7 @@ const getVisitorsAnalytics = async (req, res) => {
 
         // Total visitors
         const totalVisitorsResult = await getOne(
-            `SELECT COUNT(DISTINCT ep.id) as count
+            `SELECT COUNT(DISTINCT ep.member_id) as count
              FROM external_participants ep
              INNER JOIN bookings b ON ep.booking_id = b.id
              WHERE b.booking_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
@@ -396,29 +396,32 @@ const getVisitorsAnalytics = async (req, res) => {
             [days]
         );
 
-        // Unique visitors (from external_participants since there's no member_id relationship)
+        // Unique visitors
         const uniqueVisitorsResult = await getOne(
-            `SELECT COUNT(DISTINCT ep.id) as count
-             FROM external_participants ep
+            `SELECT COUNT(DISTINCT em.id) as count
+             FROM external_members em
+             INNER JOIN external_participants ep ON em.id = ep.member_id
              INNER JOIN bookings b ON ep.booking_id = b.id
              WHERE b.booking_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
-             AND ep.is_deleted = 0`,
+             AND em.is_deleted = 0`,
             [days]
         );
 
-        // By company (from external_participants)
+        // By company
         const byCompanyResult = await executeQuery(
             `SELECT 
-                ep.company_name,
-                COUNT(DISTINCT ep.id) as visitor_count,
+                em.company_name,
+                COUNT(DISTINCT em.id) as visitor_count,
                 COUNT(ep.id) as visit_count,
                 ROUND(COUNT(ep.id) * 100.0 / (SELECT COUNT(*) FROM external_participants WHERE is_deleted = 0), 2) as percentage
-             FROM external_participants ep
+             FROM external_members em
+             INNER JOIN external_participants ep ON em.id = ep.member_id
              INNER JOIN bookings b ON ep.booking_id = b.id
              WHERE b.booking_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+             AND em.is_deleted = 0
              AND ep.is_deleted = 0
-             AND ep.company_name IS NOT NULL
-             GROUP BY ep.company_name
+             AND em.company_name IS NOT NULL
+             GROUP BY em.company_name
              ORDER BY visit_count DESC
              LIMIT 10`,
             [days]
@@ -435,19 +438,21 @@ const getVisitorsAnalytics = async (req, res) => {
              ORDER BY count DESC`
         );
 
-        // Frequent visitors (from external_participants)
+        // Frequent visitors
         const frequentVisitorsResult = await executeQuery(
             `SELECT 
-                ep.id as member_id,
-                ep.full_name,
-                ep.company_name as company,
+                em.id as member_id,
+                em.full_name,
+                em.company_name as company,
                 COUNT(ep.id) as visit_count,
                 MAX(b.booking_date) as last_visit
-             FROM external_participants ep
+             FROM external_members em
+             INNER JOIN external_participants ep ON em.id = ep.member_id
              INNER JOIN bookings b ON ep.booking_id = b.id
              WHERE b.booking_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+             AND em.is_deleted = 0
              AND ep.is_deleted = 0
-             GROUP BY ep.id, ep.full_name, ep.company_name
+             GROUP BY em.id
              ORDER BY visit_count DESC
              LIMIT 10`,
             [days]
@@ -457,7 +462,7 @@ const getVisitorsAnalytics = async (req, res) => {
         const dailyTrendResult = await executeQuery(
             `SELECT 
                 DATE(b.booking_date) as date,
-                COUNT(DISTINCT ep.id) as count
+                COUNT(DISTINCT ep.member_id) as count
              FROM external_participants ep
              INNER JOIN bookings b ON ep.booking_id = b.id
              WHERE b.booking_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
@@ -669,8 +674,8 @@ const getPassStatistics = async (req, res) => {
                 pa.assigned_date as assigned_time,
                 'assigned' as status
              FROM pass_assignments pa
-             INNER JOIN passes p ON BINARY pa.pass_id = BINARY p.id
-             INNER JOIN external_members em ON BINARY pa.holder_id = BINARY em.id
+             INNER JOIN passes p ON pa.pass_id = p.id
+             INNER JOIN external_members em ON pa.holder_id = em.id
              WHERE pa.action_type = 'assigned'
              AND pa.actual_return_date IS NULL
              AND pa.is_deleted = 0
@@ -723,11 +728,11 @@ const getAlerts = async (req, res) => {
                 p.id as place_id,
                 p.name as place_name,
                 p.capacity,
-                (SELECT COUNT(*) FROM booking_participants bp WHERE BINARY bp.booking_id = BINARY b.id AND bp.is_deleted = 0) +
-                (SELECT COUNT(*) FROM external_participants ep WHERE BINARY ep.booking_id = BINARY b.id AND ep.is_deleted = 0) as current_count,
+                (SELECT COUNT(*) FROM booking_participants bp WHERE bp.booking_id = b.id AND bp.is_deleted = 0) +
+                (SELECT COUNT(*) FROM external_participants ep WHERE ep.booking_id = b.id AND ep.is_deleted = 0) as current_count,
                 b.created_at
              FROM bookings b
-             INNER JOIN places p ON BINARY b.place_id = BINARY p.id
+             INNER JOIN places p ON b.place_id = p.id
              WHERE DATE(b.booking_date) = CURDATE()
              AND b.status NOT IN ('cancelled', 'completed')
              AND b.is_deleted = 0
@@ -762,8 +767,8 @@ const getAlerts = async (req, res) => {
                 DATEDIFF(NOW(), pa.expected_return_date) as days_overdue,
                 pa.assigned_date
              FROM pass_assignments pa
-             INNER JOIN passes p ON BINARY pa.pass_id = BINARY p.id
-             INNER JOIN external_members em ON BINARY pa.holder_id = BINARY em.id
+             INNER JOIN passes p ON pa.pass_id = p.id
+             INNER JOIN external_members em ON pa.holder_id = em.id
              WHERE pa.action_type = 'assigned'
              AND pa.actual_return_date IS NULL
              AND pa.expected_return_date < NOW()
@@ -964,17 +969,19 @@ const getTopStatistics = async (req, res) => {
             [parseInt(limit)]
         );
 
-        // Top visitor companies (from external_participants)
+        // Top visitor companies
         const topCompaniesResult = await executeQuery(
             `SELECT 
-                ep.company_name,
-                COUNT(DISTINCT ep.id) as visitor_count,
+                em.company_name,
+                COUNT(DISTINCT em.id) as visitor_count,
                 COUNT(ep.id) as visit_count,
                 ROUND(COUNT(ep.id) * 100.0 / (SELECT COUNT(*) FROM external_participants WHERE is_deleted = 0), 2) as percentage
-             FROM external_participants ep
-             WHERE ep.is_deleted = 0
-             AND ep.company_name IS NOT NULL
-             GROUP BY ep.company_name
+             FROM external_members em
+             INNER JOIN external_participants ep ON em.id = ep.member_id
+             WHERE em.is_deleted = 0
+             AND ep.is_deleted = 0
+             AND em.company_name IS NOT NULL
+             GROUP BY em.company_name
              ORDER BY visit_count DESC
              LIMIT ?`,
             [parseInt(limit)]

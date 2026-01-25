@@ -24,7 +24,8 @@ async function getTransporter() {
         tls: {
             rejectUnauthorized: false,
             minVersion: 'TLSv1.2',
-            ciphers: 'SSLv3' // Office 365 compatibility
+            // Use secure cipher suites only (no weak SHA-1 based ciphers)
+            ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384'
         },
         requireTLS: true,
         connectionTimeout: 60000,
@@ -185,3 +186,4 @@ module.exports = {
     getTransporter,
     verifyConnection
 };
+

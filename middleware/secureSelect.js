@@ -21,16 +21,15 @@ const secureSelect = (req, res, next) => {
     if (!canAccessTable(userRole, tableName)) {
         return res.status(403).json({
             success: false,
-            message: `Access denied. Table '${tableName}' not accessible for role '${userRole}'`,
-            allowedTables: getAllowedTables(userRole)
+            message: `Access denied.`,
+            
         });
     }
-    
     // Check if role can perform read operation
     if (!canPerformOperation(userRole, tableName, 'read')) {
         return res.status(403).json({
             success: false,
-            message: `Access denied. Read operation not allowed for role '${userRole}' on table '${tableName}'`
+            message: `Access denied`
         });
     }
     

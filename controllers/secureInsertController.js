@@ -1,9 +1,9 @@
 const { executeQuery } = require('../config/database');
-const { 
-    canAccessTable, 
-    canPerformOperation, 
+const {
+    canAccessTable,
+    canPerformOperation,
     getAllowedColumns,
-    getPaginationLimits 
+    getPaginationLimits
 } = require('../config/permissions');
 const { sendEmail } = require('../services/emailService');
 const { generateICSFromFrontend } = require('../services/calendarService');
@@ -16,7 +16,7 @@ const { generateICSFromFrontend } = require('../services/calendarService');
 const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, maxRetries = 3) => {
     try {
         console.log(`📧 [AUTO EMAIL] Checking for participants to send booking confirmation emails... (Attempt ${retryCount + 1}/${maxRetries + 1})`);
-        
+
         // Get booking details
         const bookingQuery = `
             SELECT 
@@ -34,16 +34,16 @@ const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, 
             LEFT JOIN places p ON BINARY b.place_id = BINARY p.id
             WHERE BINARY b.id = BINARY ? AND b.is_deleted = 0
         `;
-        
+
         const bookingResult = await executeQuery(bookingQuery, [bookingId]);
-        
+
         if (!bookingResult.success || !bookingResult.data || bookingResult.data.length === 0) {
             console.log(`📧 [AUTO EMAIL] Booking not found: ${bookingId}`);
             return;
         }
-        
+
         const booking = bookingResult.data[0];
-        
+
         // Get external participants with email addresses
         const participantQuery = `
             SELECT 
@@ -58,9 +58,9 @@ const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, 
             AND ep.email IS NOT NULL 
             AND ep.email != ''
         `;
-        
+
         const participantResult = await executeQuery(participantQuery, [bookingId]);
-        
+
         if (!participantResult.success || !participantResult.data || participantResult.data.length === 0) {
             // If no participants found and we haven't exceeded max retries, retry after a delay
             if (retryCount < maxRetries) {
@@ -72,16 +72,16 @@ const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, 
                 return;
             }
         }
-        
+
         const participants = participantResult.data;
         console.log(`📧 [AUTO EMAIL] Found ${participants.length} participants with emails for booking: ${booking.title}`);
-        
+
         // Validate email service configuration
         if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
             console.error('📧 [AUTO EMAIL] Email service not configured! Please set SMTP_USER and SMTP_PASS in config.env');
             return;
         }
-        
+
         // Send emails to all participants
         const emailPromises = participants.map(async (participant) => {
             try {
@@ -99,7 +99,7 @@ const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, 
                         minute: '2-digit'
                     });
                 };
-                
+
                 const html = `
                     <!DOCTYPE html>
                     <html>
@@ -161,7 +161,7 @@ const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, 
                     </body>
                     </html>
                 `;
-                
+
                 const text = `
                     Booking Confirmation - ${booking.title}
                     
@@ -180,7 +180,7 @@ const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, 
                     Best regards,
                     Booking Management Team
                 `;
-                
+
                 // Send email
                 const emailResult = await sendEmail({
                     to: participant.email,
@@ -188,7 +188,7 @@ const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, 
                     html: html,
                     text: text
                 });
-                
+
                 if (emailResult.success) {
                     console.log(`   ✅ [AUTO EMAIL] Email sent successfully to ${participant.email} (Message ID: ${emailResult.messageId || 'N/A'})`);
                 } else {
@@ -199,7 +199,7 @@ const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, 
                         console.error(`      Details:`, emailResult.errorDetails);
                     }
                 }
-                
+
                 return {
                     participantId: participant.id,
                     participantEmail: participant.email,
@@ -216,15 +216,15 @@ const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, 
                 };
             }
         });
-        
+
         const results = await Promise.all(emailPromises);
-        
+
         // Log email sending activity
         const successCount = results.filter(r => r.success).length;
         const failCount = results.filter(r => !r.success).length;
-        
+
         console.log(`📧 [AUTO EMAIL] Email sending completed: ${successCount} sent, ${failCount} failed`);
-        
+
         // Log to booking_email_logs table
         await executeQuery(
             `INSERT INTO booking_email_logs 
@@ -232,7 +232,7 @@ const sendBookingConfirmationEmails = async (bookingId, userId, retryCount = 0, 
              VALUES (?, ?, ?, ?, NOW(), ?)`,
             [bookingId, userId, 'booking_confirmation', participants.length, JSON.stringify(results)]
         );
-        
+
     } catch (error) {
         console.error('📧 [AUTO EMAIL] Error in sendBookingConfirmationEmails:', error);
         // Don't throw - this is a background process
@@ -281,7 +281,7 @@ const secureInsert = async (req, res) => {
 
         // Get allowed columns for this role and table
         const allowedColumns = getAllowedColumns(userRole, tableName);
-        
+
         // If no specific columns are allowed, deny access
         if (allowedColumns.length === 0) {
             return res.status(403).json({
@@ -293,7 +293,7 @@ const secureInsert = async (req, res) => {
         // Filter insert data to only include allowed columns
         const filteredData = {};
         const invalidColumns = [];
-        
+
         for (const [column, value] of Object.entries(insertData)) {
             if (allowedColumns.includes('*') || allowedColumns.includes(column)) {
                 filteredData[column] = value;
@@ -329,9 +329,9 @@ const secureInsert = async (req, res) => {
         const columns = Object.keys(filteredData);
         const values = Object.values(filteredData);
         const placeholders = columns.map(() => '?').join(', ');
-        
+
         const insertQuery = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
-        
+
         console.log(`[SECURE INSERT] User ${userId} (${userRole}) inserting into table: ${tableName}`);
         console.log(`[SECURE INSERT] Columns: ${columns.join(', ')}`);
 
@@ -342,12 +342,12 @@ const secureInsert = async (req, res) => {
             // Get the inserted record ID
             // For UUID tables (like bookings), the ID is in the insertData, not insertId
             let recordId = result.data.insertId;
-            
+
             // If no insertId (UUID tables), try to get ID from filteredData or insertData
             if (!recordId || recordId === 0) {
                 recordId = filteredData.id || insertData.id;
             }
-            
+
             // Get the inserted record
             let insertedRecord = null;
             if (recordId) {
@@ -370,7 +370,7 @@ const secureInsert = async (req, res) => {
                     console.error('📧 [AUTO EMAIL] Background email sending failed:', error);
                 });
             }
-            
+
             // If this is an external_participant creation, automatically send confirmation emails for the booking
             if (tableName === 'external_participants' && filteredData.booking_id) {
                 const bookingId = filteredData.booking_id;
@@ -401,7 +401,7 @@ const secureInsert = async (req, res) => {
             return res.status(500).json({
                 success: false,
                 message: 'Failed to insert record',
-                error: result.error
+
             });
         }
 
@@ -456,7 +456,7 @@ const secureBulkInsert = async (req, res) => {
 
         // Get allowed columns for this role and table
         const allowedColumns = getAllowedColumns(userRole, tableName);
-        
+
         if (allowedColumns.length === 0) {
             return res.status(403).json({
                 success: false,
@@ -477,7 +477,7 @@ const secureBulkInsert = async (req, res) => {
 
             const filteredData = {};
             const invalidColumns = [];
-            
+
             for (const [column, value] of Object.entries(record)) {
                 if (allowedColumns.includes('*') || allowedColumns.includes(column)) {
                     filteredData[column] = value;
@@ -528,7 +528,7 @@ const secureBulkInsert = async (req, res) => {
         const columns = Object.keys(filteredRecords[0]);
         const placeholders = `(${columns.map(() => '?').join(', ')})`;
         const valuesPlaceholders = filteredRecords.map(() => placeholders).join(', ');
-        
+
         const bulkInsertQuery = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES ${valuesPlaceholders}`;
         const allValues = filteredRecords.flatMap(record => Object.values(record));
 
@@ -558,7 +558,7 @@ const secureBulkInsert = async (req, res) => {
             return res.status(500).json({
                 success: false,
                 message: 'Failed to perform bulk insert',
-                error: result.error
+
             });
         }
 

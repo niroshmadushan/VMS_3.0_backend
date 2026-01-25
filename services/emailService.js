@@ -15,8 +15,10 @@ class EmailService {
             tls: {
                 // Do not fail on invalid certs
                 rejectUnauthorized: false,
-                // Office 365 specific TLS settings
-                minVersion: 'TLSv1.2'
+                // Office 365 specific TLS settings - Use TLS 1.2 or higher
+                minVersion: 'TLSv1.2',
+                // Use secure cipher suites only (no weak SHA-1 based ciphers)
+                ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384'
             },
             requireTLS: true, // Require TLS for Office 365
             // Office 365 specific settings
