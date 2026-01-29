@@ -12,7 +12,27 @@ function escapeICS(text) {
         .replace(/\\/g, '\\\\')
         .replace(/,/g, '\\,')
         .replace(/;/g, '\\;')
-        .replace(/\n/g, '\\n');
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '');
+}
+
+/**
+ * Fold long lines in ICS content (max 75 characters)
+ */
+function foldLine(line) {
+    const maxLength = 74;
+    if (line.length <= maxLength) return line;
+
+    let result = '';
+    let currentLine = line;
+
+    while (currentLine.length > maxLength) {
+        result += currentLine.substring(0, maxLength) + '\r\n ';
+        currentLine = currentLine.substring(maxLength);
+    }
+
+    result += currentLine;
+    return result;
 }
 
 /**
@@ -20,40 +40,43 @@ function escapeICS(text) {
  */
 function formatICSDate(dateInput, timezone = 'UTC') {
     let date;
-    
+
     if (dateInput instanceof Date) {
         date = dateInput;
     } else if (typeof dateInput === 'string') {
-        // Handle various date formats
-        // Format: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS" or ISO string
-        const dateStr = dateInput.replace(' ', 'T');
-        date = new Date(dateStr);
-        
-        // If timezone is not UTC, convert to UTC
-        if (timezone !== 'UTC' && !dateStr.includes('Z')) {
-            // For now, assume local time if no timezone specified
-            // You can enhance this with timezone conversion if needed
+        let dateStr = String(dateInput).trim();
+
+        if (dateStr.startsWith('0000') || !dateStr) {
+            date = new Date();
+        } else {
+            // Handle various formats, e.g., "HH:mm:ss" or just "HH:mm"
+            if (dateStr.length <= 8 && dateStr.includes(':')) {
+                const today = new Date().toISOString().split('T')[0];
+                dateStr = `${today}T${dateStr}`;
+            }
+            dateStr = dateStr.replace(' ', 'T');
+            date = new Date(dateStr);
         }
     } else {
-        throw new Error('Invalid date format');
+        date = new Date();
     }
-    
-    // Convert to UTC and format as ICS
+
+    if (isNaN(date.getTime())) {
+        date = new Date();
+    }
+
     const year = date.getUTCFullYear();
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const day = String(date.getUTCDate()).padStart(2, '0');
     const hours = String(date.getUTCHours()).padStart(2, '0');
     const minutes = String(date.getUTCMinutes()).padStart(2, '0');
     const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-    
+
     return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
 }
 
 /**
  * Generate ICS file content for a booking event
- * @param {Object} booking - Booking object
- * @param {Object} options - Additional options
- * @returns {String} ICS file content
  */
 function generateICS(booking, options = {}) {
     const {
@@ -63,44 +86,42 @@ function generateICS(booking, options = {}) {
         description = '',
         url = '',
         timezone = 'UTC',
-        method = 'REQUEST' // REQUEST, PUBLISH, CANCEL
+        method = 'REQUEST',
+        attendees = []
     } = options;
-    
-    // Extract booking details
-    const title = booking.title || booking.meetingName || 'Meeting';
+
+    const title = booking.title || booking.meetingName || options.title || 'Meeting Invitation';
     const startTime = booking.start_time || booking.startTime;
     const endTime = booking.end_time || booking.endTime;
-    const place = booking.place_name || booking.place || location;
-    const desc = booking.description || description || '';
-    const bookingUrl = booking.url || url || '';
-    
-    // Format dates
+    const place = booking.place_name || booking.place || location || 'TBD';
+    const desc = booking.description || description || 'No description provided';
+
     const dtStart = formatICSDate(startTime, timezone);
     const dtEnd = formatICSDate(endTime, timezone);
     const dtStamp = formatICSDate(new Date(), timezone);
-    
-    // Generate unique ID
     const uid = booking.id || `booking-${Date.now()}@booking-system.com`;
-    
-    // Build ICS content
-    const ics = [
+
+    const lines = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
         'PRODID:-//Booking Management System//Calendar Service//EN',
         'CALSCALE:GREGORIAN',
         'METHOD:' + method,
+        'X-WR-CALNAME:' + escapeICS(title),
+        'X-WR-TIMEZONE:' + timezone,
         'BEGIN:VEVENT',
         'UID:' + uid,
         'DTSTAMP:' + dtStamp,
-        'DTSTART:' + dtStart,
-        'DTEND:' + dtEnd,
+        `DTSTART:${dtStart}`,
+        `DTEND:${dtEnd}`,
         'SUMMARY:' + escapeICS(title),
         'DESCRIPTION:' + escapeICS(desc),
         'LOCATION:' + escapeICS(place),
-        'ORGANIZER;CN=' + escapeICS(organizerName) + ':MAILTO:' + organizerEmail,
+        `ORGANIZER;CN="${escapeICS(organizerName)}":mailto:${organizerEmail}`,
         'STATUS:CONFIRMED',
         'SEQUENCE:0',
-        ...(bookingUrl ? ['URL:' + bookingUrl] : []),
+        'TRANSP:OPAQUE',
+        ...attendees.map(a => `ATTENDEE;RSVP=TRUE;CN="${escapeICS(a.name || a.email)}":mailto:${a.email}`),
         'BEGIN:VALARM',
         'TRIGGER:-PT15M',
         'ACTION:DISPLAY',
@@ -108,9 +129,9 @@ function generateICS(booking, options = {}) {
         'END:VALARM',
         'END:VEVENT',
         'END:VCALENDAR'
-    ].join('\r\n');
-    
-    return ics;
+    ];
+
+    return lines.map(foldLine).join('\r\n');
 }
 
 /**
@@ -133,11 +154,11 @@ function generateICSFromFrontend(data, options = {}) {
         url = '',
         timezone = 'UTC'
     } = data;
-    
+
     // Combine date and time
     const startDateTime = `${date} ${startTime}`;
     const endDateTime = `${date} ${endTime}`;
-    
+
     // Create booking object
     const booking = {
         title: meetingName,
@@ -147,17 +168,19 @@ function generateICSFromFrontend(data, options = {}) {
         end_time: endDateTime,
         id: `frontend-booking-${Date.now()}`
     };
-    
+
     // Use first participant as organizer if not provided
     const orgEmail = organizerEmail || (participantEmails && participantEmails.length > 0 ? participantEmails[0] : 'noreply@booking-system.com');
-    
+
     return generateICS(booking, {
+        title: meetingName,
         organizerEmail: orgEmail,
         organizerName: organizerName,
         location: place,
         description: description,
         url: url,
-        timezone: timezone
+        timezone: timezone,
+        attendees: participantEmails.map(email => ({ email, name: email.split('@')[0] }))
     });
 }
 
@@ -172,7 +195,7 @@ function generateCSV(booking) {
     const endTime = booking.end_time || booking.endTime;
     const place = booking.place_name || booking.place || '';
     const description = booking.description || '';
-    
+
     // Format dates for CSV (Google Calendar format: YYYYMMDDTHHmmssZ)
     const formatCSVDateTime = (dateInput) => {
         let date;
@@ -185,7 +208,7 @@ function generateCSV(booking) {
         } else {
             return '';
         }
-        
+
         // Convert to UTC and format
         const year = date.getUTCFullYear();
         const month = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -193,21 +216,21 @@ function generateCSV(booking) {
         const hours = String(date.getUTCHours()).padStart(2, '0');
         const minutes = String(date.getUTCMinutes()).padStart(2, '0');
         const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-        
+
         return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
     };
-    
+
     // Escape CSV fields (replace " with "")
     const escapeCSV = (text) => {
         if (!text) return '';
         return String(text).replace(/"/g, '""');
     };
-    
+
     const csv = [
         'Subject,Start Date,Start Time,End Date,End Time,All Day Event,Description,Location',
         `"${escapeCSV(title)}","${formatCSVDateTime(startTime)}","${formatCSVDateTime(startTime)}","${formatCSVDateTime(endTime)}","${formatCSVDateTime(endTime)}",False,"${escapeCSV(description)}","${escapeCSV(place)}"`
     ].join('\n');
-    
+
     return csv;
 }
 
@@ -225,11 +248,11 @@ function generateCSVFromFrontend(data) {
         place = '',
         description = ''
     } = data;
-    
+
     // Combine date and time
     const startDateTime = `${date} ${startTime}`;
     const endDateTime = `${date} ${endTime}`;
-    
+
     const booking = {
         title: meetingName,
         description: description,
@@ -237,7 +260,7 @@ function generateCSVFromFrontend(data) {
         start_time: startDateTime,
         end_time: endDateTime
     };
-    
+
     return generateCSV(booking);
 }
 

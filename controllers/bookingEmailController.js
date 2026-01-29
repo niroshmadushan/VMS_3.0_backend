@@ -11,7 +11,7 @@ const sendBookingEmailFromFrontend = async (req, res) => {
     try {
         const userId = req.user.id;
         const userRole = req.user.role;
-        
+
         // Get all data from frontend request body
         const {
             meetingName,
@@ -133,9 +133,9 @@ const sendBookingEmailFromFrontend = async (req, res) => {
                             place: place || '',
                             description: description || '',
                             participantEmails: [email],
-                            organizerEmail: email
+                            organizerEmail: require('../config/config').email.user
                         };
-                        
+
                         if (calendarFormat === 'csv') {
                             const csvContent = generateCSVFromFrontend(calendarData);
                             attachments.push({
@@ -243,27 +243,45 @@ const sendBookingEmailFromFrontend = async (req, res) => {
 function generateEmailContentFromData(booking, participant, emailType, customMessage) {
     console.log('📧 generateEmailContentFromData - booking.start_time:', booking.start_time);
     console.log('📧 generateEmailContentFromData - booking.end_time:', booking.end_time);
-    
+
     const formatDate = (dateInput) => {
-        if (!dateInput) {
-            return String(dateInput || 'TBD');
+        if (!dateInput) return 'TBD';
+
+        let dateObj;
+        if (dateInput instanceof Date) {
+            dateObj = dateInput;
+        } else {
+            const str = String(dateInput);
+            dateObj = new Date(str.includes(' ') ? str.replace(' ', 'T') : str);
         }
-        // Return raw value as string - no formatting
-        const rawValue = dateInput instanceof Date 
-            ? dateInput.toISOString() 
-            : String(dateInput);
-        return rawValue;
+
+        if (isNaN(dateObj.getTime())) return String(dateInput);
+
+        return dateObj.toLocaleDateString('en-US', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
     };
 
     const formatTime = (dateInput) => {
-        if (!dateInput) {
-            return String(dateInput || 'TBD');
+        if (!dateInput) return 'TBD';
+
+        let dateObj;
+        if (dateInput instanceof Date) {
+            dateObj = dateInput;
+        } else {
+            const str = String(dateInput);
+            dateObj = new Date(str.includes(' ') ? str.replace(' ', 'T') : str);
         }
-        // Return raw value as string - no formatting
-        const rawValue = dateInput instanceof Date 
-            ? dateInput.toISOString() 
-            : String(dateInput);
-        return rawValue;
+
+        if (isNaN(dateObj.getTime())) {
+            const str = String(dateInput);
+            const timePart = str.includes(' ') ? str.split(' ')[1] : str;
+            return timePart.substring(0, 5);
+        }
+
+        return dateObj.toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', hour12: true
+        });
     };
 
     let subject, html, text;
@@ -461,7 +479,7 @@ const sendBookingDetailsEmail = async (req, res) => {
         }
 
         const booking = bookingQueryResult.data[0];
-        
+
         console.log('');
         console.log('📋 ========== BOOKING DATA FROM DATABASE ==========');
         console.log('   All booking columns:');
@@ -475,10 +493,10 @@ const sendBookingDetailsEmail = async (req, res) => {
         console.log('   - Place:', booking.place_name);
         console.log('==========================================');
         console.log('');
-        
+
         // Determine which date/time to use for display
         // Priority: booking_date (date) + start_time/end_time (time) OR start_time/end_time (date + time)
-        
+
         // For DATE: Use booking_date if available, otherwise extract date from start_time
         if (booking.booking_date_str && booking.booking_date_str !== 'null' && booking.booking_date_str !== '') {
             booking.booking_date_display = booking.booking_date_str;
@@ -506,7 +524,7 @@ const sendBookingDetailsEmail = async (req, res) => {
             console.error('❌ No valid booking_date found!');
             booking.booking_date_display = 'TBD';
         }
-        
+
         // For START TIME: Use start_time
         if (booking.start_time_str && booking.start_time_str !== 'null' && booking.start_time_str !== '') {
             booking.start_time_display = booking.start_time_str;
@@ -527,7 +545,7 @@ const sendBookingDetailsEmail = async (req, res) => {
             console.error('❌ No valid start_time found!');
             booking.start_time_display = 'TBD';
         }
-        
+
         // For END TIME: Use end_time
         if (booking.end_time_str && booking.end_time_str !== 'null' && booking.end_time_str !== '') {
             booking.end_time_display = booking.end_time_str;
@@ -548,7 +566,7 @@ const sendBookingDetailsEmail = async (req, res) => {
             console.error('❌ No valid end_time found!');
             booking.end_time_display = 'TBD';
         }
-        
+
         // Set the values that will be used in email
         booking.start_time = booking.start_time_display;
         booking.end_time = booking.end_time_display;
@@ -563,7 +581,7 @@ const sendBookingDetailsEmail = async (req, res) => {
         console.log('   - Status:', booking.status);
         console.log('==========================================');
         console.log('');
-        
+
         // Validate dates before proceeding
         if (!booking.start_time || booking.start_time === 'TBD' || !booking.end_time || booking.end_time === 'TBD') {
             console.error('⚠️ WARNING: Missing start_time or end_time in booking data!');
@@ -576,7 +594,7 @@ const sendBookingDetailsEmail = async (req, res) => {
         let participants = [];
         if (participantIds && participantIds.length > 0) {
             console.log('👥 Fetching SPECIFIC participants:', participantIds.length, 'participants');
-            
+
             // Separate participants by type based on prefixed ID format
             // Frontend sends: 
             // - internal-{bookingId}-{userId}
@@ -585,7 +603,7 @@ const sendBookingDetailsEmail = async (req, res) => {
             const externalParticipantIds = []; // UUIDs from external_participants (after "external-" prefix)
             const internalUserIds = []; // User IDs extracted from "internal-{bookingId}-{userId}"
             let responsiblePersonNeeded = false;
-            
+
             participantIds.forEach(id => {
                 if (id.startsWith('responsible-')) {
                     // Format: responsible-{bookingId}
@@ -606,11 +624,11 @@ const sendBookingDetailsEmail = async (req, res) => {
                         // UUID has 5 parts, so format is: internal-{uuid-part1}-{uuid-part2}-{uuid-part3}-{uuid-part4}-{uuid-part5}-{identifier}
                         const identifier = parts[parts.length - 1]; // Last part is user ID or email
                         const extractedBookingId = parts.slice(1, -1).join('-'); // Everything between 'internal-' and last part
-                        
+
                         // Check if identifier is a number (user ID) or email (contains @)
                         const isEmail = identifier.includes('@');
                         const isUserId = /^\d+$/.test(identifier);
-                        
+
                         if (isEmail) {
                             internalUserIds.push({
                                 email: identifier,
@@ -719,13 +737,13 @@ const sendBookingDetailsEmail = async (req, res) => {
             // Get internal participants (users by user ID or email from internal-{bookingId}-{identifier})
             if (internalUserIds.length > 0) {
                 console.log('🏢 Fetching', internalUserIds.length, 'internal participants (users)...');
-                
+
                 // Separate by ID and email
                 const userIds = internalUserIds.filter(item => item.type === 'id').map(item => item.userId);
                 const userEmails = internalUserIds.filter(item => item.type === 'email').map(item => item.email);
-                
+
                 let internalUsersResult = { success: true, data: [] };
-                
+
                 // Query by user IDs if any
                 if (userIds.length > 0) {
                     console.log('   📋 Querying by user IDs:', userIds);
@@ -745,7 +763,7 @@ const sendBookingDetailsEmail = async (req, res) => {
                         internalUsersResult.data.push(...(Array.isArray(resultById.data) ? resultById.data : []));
                     }
                 }
-                
+
                 // Query by emails if any
                 if (userEmails.length > 0) {
                     console.log('   📧 Querying by emails:', userEmails);
@@ -765,24 +783,24 @@ const sendBookingDetailsEmail = async (req, res) => {
                         internalUsersResult.data.push(...(Array.isArray(resultByEmail.data) ? resultByEmail.data : []));
                     }
                 }
-                
+
                 if (internalUsersResult.data && internalUsersResult.data.length > 0) {
                     // Map internal users to participant format
                     internalUsersResult.data.forEach(user => {
                         // Find matching internal data by user ID or email
-                        const internalData = internalUserIds.find(item => 
+                        const internalData = internalUserIds.find(item =>
                             (item.type === 'id' && item.userId == user.user_id) ||
                             (item.type === 'email' && item.email === user.email)
                         );
-                        
+
                         // Determine the identifier to use in the ID
-                        const identifier = internalData 
+                        const identifier = internalData
                             ? (internalData.type === 'email' ? internalData.email : internalData.userId)
                             : user.user_id.toString();
-                        
+
                         const internalParticipant = {
-                            id: internalData 
-                                ? `internal-${internalData.bookingId}-${identifier}` 
+                            id: internalData
+                                ? `internal-${internalData.bookingId}-${identifier}`
                                 : `internal-${bookingId}-${user.user_id}`, // Keep original format
                             full_name: user.full_name || user.email,
                             email: user.email,
@@ -847,7 +865,7 @@ const sendBookingDetailsEmail = async (req, res) => {
                 console.log(`   📬 Sending to: ${participant.email}`);
                 console.log(`   📅 Start Time (raw):`, booking.start_time, 'Type:', typeof booking.start_time);
                 console.log(`   📅 End Time (raw):`, booking.end_time, 'Type:', typeof booking.end_time);
-                
+
                 if (!participant.email) {
                     console.log(`   ❌ SKIPPED: No email address for ${participant.full_name}`);
                     return {
@@ -859,10 +877,10 @@ const sendBookingDetailsEmail = async (req, res) => {
                 }
 
                 console.log(`   📬 Sending to: ${participant.email}`);
-                
+
                 // Generate email content based on type
                 const emailContent = generateEmailContent(booking, participant, emailType, customMessage);
-                
+
                 console.log('');
                 console.log('📧 ========== EMAIL CONTENT ==========');
                 console.log('   To:', participant.email);
@@ -876,7 +894,7 @@ const sendBookingDetailsEmail = async (req, res) => {
                 console.log('   ' + emailContent.text.replace(/\n/g, '\n   '));
                 console.log('==========================================');
                 console.log('');
-                
+
                 // Validate email service before sending
                 if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
                     const errorMsg = 'Email service not configured. Please set SMTP_USER and SMTP_PASS in config.env';
@@ -890,12 +908,41 @@ const sendBookingDetailsEmail = async (req, res) => {
                     };
                 }
 
+                // Generate ICS calendar file if requested
+                const attachments = [];
+                // Default to true for database-based emails unless explicitly false
+                const shouldIncludeCalendar = req.body.includeCalendar !== false;
+
+                if (shouldIncludeCalendar) {
+                    try {
+                        const { generateICS } = require('../services/calendarService');
+                        const icsContent = generateICS(booking, {
+                            title: booking.title || 'Booking Details',
+                            organizerEmail: booking.created_by_email || process.env.SMTP_FROM || process.env.SMTP_USER,
+                            organizerName: booking.created_by_name || 'Booking System',
+                            location: booking.place_name || '',
+                            description: booking.description || '',
+                            attendees: [{ name: participant.full_name, email: participant.email }]
+                        });
+
+                        attachments.push({
+                            filename: `booking_${booking.id}.ics`,
+                            content: icsContent,
+                            contentType: 'text/calendar; charset=utf-8; method=REQUEST'
+                        });
+                        console.log(`   📅 ICS calendar file generated and attached`);
+                    } catch (calendarError) {
+                        console.error('   ⚠️ Error generating calendar file:', calendarError.message);
+                    }
+                }
+
                 // Send email
                 const emailResult = await sendEmail({
                     to: participant.email,
                     subject: emailContent.subject,
                     html: emailContent.html,
-                    text: emailContent.text
+                    text: emailContent.text,
+                    attachments: attachments
                 });
 
                 if (emailResult.success) {
@@ -913,8 +960,8 @@ const sendBookingDetailsEmail = async (req, res) => {
                     participantName: participant.full_name,
                     participantEmail: participant.email,
                     success: emailResult.success,
-                    message: emailResult.success 
-                        ? 'Email sent successfully' 
+                    message: emailResult.success
+                        ? 'Email sent successfully'
                         : (emailResult.error || 'Failed to send email'),
                     error: emailResult.success ? undefined : (emailResult.error || 'Unknown error')
                 };
@@ -931,7 +978,7 @@ const sendBookingDetailsEmail = async (req, res) => {
         });
 
         const results = await Promise.all(emailPromises);
-        
+
         console.log('');
         console.log('📊 Email Sending Summary:');
 
@@ -942,7 +989,7 @@ const sendBookingDetailsEmail = async (req, res) => {
              VALUES (?, ?, ?, ?, NOW(), ?)`,
             [bookingId, userId, emailType, participants.length, JSON.stringify(results)]
         );
-        
+
         if (!logResult.success) {
             console.error('Failed to log email activity:', logResult.error);
         }
@@ -965,8 +1012,8 @@ const sendBookingDetailsEmail = async (req, res) => {
 
         res.json({
             success: failureCount === 0, // Only true if all emails sent successfully
-            message: failureCount === 0 
-                ? `All emails sent successfully to ${successCount} participant(s)` 
+            message: failureCount === 0
+                ? `All emails sent successfully to ${successCount} participant(s)`
                 : `Email sending completed. ${successCount} successful, ${failureCount} failed.`,
             data: {
                 bookingId,
@@ -1061,7 +1108,7 @@ const sendBookingReminderEmail = async (req, res) => {
         }
 
         const booking = bookingQueryResult.data[0];
-        
+
         console.log('');
         console.log('📋 ========== REMINDER EMAIL - BOOKING DATA ==========');
         console.log('   - booking_date:', booking.booking_date, '(Type:', typeof booking.booking_date, ')');
@@ -1072,7 +1119,7 @@ const sendBookingReminderEmail = async (req, res) => {
         console.log('   - end_time_str:', booking.end_time_str);
         console.log('==========================================');
         console.log('');
-        
+
         // Set display values (same logic as booking details)
         if (booking.start_time_str && booking.start_time_str !== 'null' && booking.start_time_str !== '') {
             booking.start_time = booking.start_time_str;
@@ -1087,7 +1134,7 @@ const sendBookingReminderEmail = async (req, res) => {
         } else if (booking.start_time) {
             booking.start_time = String(booking.start_time);
         }
-        
+
         if (booking.end_time_str && booking.end_time_str !== 'null' && booking.end_time_str !== '') {
             booking.end_time = booking.end_time_str;
         } else if (booking.end_time instanceof Date) {
@@ -1136,7 +1183,7 @@ const sendBookingReminderEmail = async (req, res) => {
         const emailPromises = participants.map(async (participant) => {
             try {
                 const emailContent = generateReminderEmailContent(booking, participant, reminderType, customMessage);
-                
+
                 console.log('');
                 console.log('📧 ========== REMINDER EMAIL CONTENT ==========');
                 console.log('   To:', participant.email);
@@ -1149,13 +1196,36 @@ const sendBookingReminderEmail = async (req, res) => {
                 console.log('   📄 Text Body:');
                 console.log('   ' + emailContent.text.replace(/\n/g, '\n   '));
                 console.log('==========================================');
-                console.log('');
-                
+                // Generate ICS calendar file
+                const attachments = [];
+                const shouldIncludeCalendar = req.body.includeCalendar !== false;
+
+                if (shouldIncludeCalendar) {
+                    try {
+                        const { generateICS } = require('../services/calendarService');
+                        const icsContent = generateICS(booking, {
+                            title: booking.title || 'Booking Reminder',
+                            location: booking.place_name || '',
+                            description: booking.description || '',
+                            attendees: [{ name: participant.full_name, email: participant.email }]
+                        });
+
+                        attachments.push({
+                            filename: `reminder_${booking.id}.ics`,
+                            content: icsContent,
+                            contentType: 'text/calendar; charset=utf-8; method=REQUEST'
+                        });
+                    } catch (calendarError) {
+                        console.error('   ⚠️ Error generating calendar file:', calendarError.message);
+                    }
+                }
+
                 const emailResult = await sendEmail({
                     to: participant.email,
                     subject: emailContent.subject,
                     html: emailContent.html,
-                    text: emailContent.text
+                    text: emailContent.text,
+                    attachments: attachments
                 });
 
                 return {
@@ -1185,7 +1255,7 @@ const sendBookingReminderEmail = async (req, res) => {
              VALUES (?, ?, ?, ?, NOW(), ?)`,
             [bookingId, userId, `reminder_${reminderType}`, participants.length, JSON.stringify(results)]
         );
-        
+
         if (!logResult.success) {
             console.error('Failed to log reminder activity:', logResult.error);
         }
@@ -1290,7 +1360,7 @@ const getBookingParticipants = async (req, res) => {
             WHERE BINARY b.id = BINARY ?
         `;
         const responsiblePersonResult = await executeQuery(responsiblePersonQuery, [`responsible-${bookingId}`, bookingId]);
-        
+
         if (responsiblePersonResult.success && responsiblePersonResult.data && responsiblePersonResult.data.length > 0) {
             const responsiblePerson = responsiblePersonResult.data[0];
             // Add responsible person to the beginning of the participants list
@@ -1379,41 +1449,59 @@ const getBookingEmailHistory = async (req, res) => {
 function generateEmailContent(booking, participant, emailType, customMessage) {
     console.log('📧 generateEmailContent - booking.start_time:', booking.start_time, 'Type:', typeof booking.start_time);
     console.log('📧 generateEmailContent - booking.end_time:', booking.end_time, 'Type:', typeof booking.end_time);
-    
+
     const formatDate = (dateInput) => {
-        console.log('🔍 formatDate called with:', dateInput, 'Type:', typeof dateInput, 'Is Date:', dateInput instanceof Date);
-        
-        // First, just return the raw value to see what we have
-        if (!dateInput) {
-            console.error('❌ formatDate: dateInput is null or undefined');
-            return dateInput ? String(dateInput) : 'TBD';
+        if (!dateInput) return 'TBD';
+
+        let dateObj;
+        if (dateInput instanceof Date) {
+            dateObj = dateInput;
+        } else {
+            // Handle "YYYY-MM-DD HH:MM:SS" or "0000-00-00 ..."
+            const str = String(dateInput);
+            if (str.startsWith('0000-00-00')) {
+                // If we have a dummy date but the booking has a date_display, use that
+                if (booking.booking_date_display && !booking.booking_date_display.startsWith('0000')) {
+                    return booking.booking_date_display;
+                }
+                return 'Date TBD';
+            }
+            dateObj = new Date(str.includes(' ') ? str.replace(' ', 'T') : str);
         }
-        
-        // Return raw value as string - no formatting
-        const rawValue = dateInput instanceof Date 
-            ? dateInput.toISOString() 
-            : String(dateInput);
-        
-        console.log('✅ formatDate returning raw value:', rawValue);
-        return rawValue;
+
+        if (isNaN(dateObj.getTime())) {
+            // Fallback for invalid date strings
+            const str = String(dateInput);
+            if (str.includes(' ')) return str.split(' ')[0]; // Return the date part if possible
+            return str;
+        }
+
+        return dateObj.toLocaleDateString('en-US', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
     };
 
     const formatTime = (dateInput) => {
-        console.log('🔍 formatTime called with:', dateInput, 'Type:', typeof dateInput, 'Is Date:', dateInput instanceof Date);
-        
-        // First, just return the raw value to see what we have
-        if (!dateInput) {
-            console.error('❌ formatTime: dateInput is null or undefined');
-            return dateInput ? String(dateInput) : 'TBD';
+        if (!dateInput) return 'TBD';
+
+        let dateObj;
+        if (dateInput instanceof Date) {
+            dateObj = dateInput;
+        } else {
+            const str = String(dateInput);
+            dateObj = new Date(str.includes(' ') ? str.replace(' ', 'T') : str);
         }
-        
-        // Return raw value as string - no formatting
-        const rawValue = dateInput instanceof Date 
-            ? dateInput.toISOString() 
-            : String(dateInput);
-        
-        console.log('✅ formatTime returning raw value:', rawValue);
-        return rawValue;
+
+        if (isNaN(dateObj.getTime())) {
+            // Fallback: extract time from string "YYYY-MM-DD HH:MM:SS"
+            const str = String(dateInput);
+            const timePart = str.includes(' ') ? str.split(' ')[1] : str;
+            return timePart.substring(0, 5); // Return HH:MM
+        }
+
+        return dateObj.toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', hour12: true
+        });
     };
 
     let subject, html, text;
@@ -1587,37 +1675,44 @@ function generateEmailContent(booking, participant, emailType, customMessage) {
  */
 function generateReminderEmailContent(booking, participant, reminderType, customMessage) {
     const formatDate = (dateInput) => {
-        console.log('🔍 formatDate (reminder) called with:', dateInput, 'Type:', typeof dateInput, 'Is Date:', dateInput instanceof Date);
-        
-        // Return raw value as string - no formatting
-        if (!dateInput) {
-            console.error('❌ formatDate: dateInput is null or undefined');
-            return dateInput ? String(dateInput) : 'TBD';
+        if (!dateInput) return 'TBD';
+
+        let dateObj;
+        if (dateInput instanceof Date) {
+            dateObj = dateInput;
+        } else {
+            const str = String(dateInput);
+            if (str.startsWith('0000-00-00')) return 'Date TBD';
+            dateObj = new Date(str.includes(' ') ? str.replace(' ', 'T') : str);
         }
-        
-        const rawValue = dateInput instanceof Date 
-            ? dateInput.toISOString() 
-            : String(dateInput);
-        
-        console.log('✅ formatDate (reminder) returning raw value:', rawValue);
-        return rawValue;
+
+        if (isNaN(dateObj.getTime())) return String(dateInput);
+
+        return dateObj.toLocaleDateString('en-US', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
     };
 
     const formatTime = (dateInput) => {
-        console.log('🔍 formatTime (reminder) called with:', dateInput, 'Type:', typeof dateInput, 'Is Date:', dateInput instanceof Date);
-        
-        // Return raw value as string - no formatting
-        if (!dateInput) {
-            console.error('❌ formatTime: dateInput is null or undefined');
-            return dateInput ? String(dateInput) : 'TBD';
+        if (!dateInput) return 'TBD';
+
+        let dateObj;
+        if (dateInput instanceof Date) {
+            dateObj = dateInput;
+        } else {
+            const str = String(dateInput);
+            dateObj = new Date(str.includes(' ') ? str.replace(' ', 'T') : str);
         }
-        
-        const rawValue = dateInput instanceof Date 
-            ? dateInput.toISOString() 
-            : String(dateInput);
-        
-        console.log('✅ formatTime (reminder) returning raw value:', rawValue);
-        return rawValue;
+
+        if (isNaN(dateObj.getTime())) {
+            const str = String(dateInput);
+            const timePart = str.includes(' ') ? str.split(' ')[1] : str;
+            return timePart.substring(0, 5);
+        }
+
+        return dateObj.toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', hour12: true
+        });
     };
 
     let subject, html, text;
